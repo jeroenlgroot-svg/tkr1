@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TKR1 — Recoupment Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#0f0e0c;--paper:#f5f2eb;--cream:#ede9df;--gold:#b89a4e;--rust:#8b3a2a;--sage:#3d5a47;--dim:#7a7268;--rule:#ccc6b8;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:'DM Mono',monospace;min-height:100vh;padding:36px 20px 80px;}
+  header{text-align:center;margin-bottom:40px;}
+  header::before{content:'';display:block;height:2px;background:linear-gradient(to right,transparent,var(--gold),transparent);margin-bottom:22px;}
+  header::after{content:'';display:block;height:1px;background:linear-gradient(to right,transparent,var(--gold),transparent);margin-top:22px;}
+  .logo{font-family:'Playfair Display',serif;font-size:12px;letter-spacing:6px;color:var(--gold);text-transform:uppercase;margin-bottom:8px;}
+  h1{font-family:'Playfair Display',serif;font-size:26px;font-weight:400;}
+  .subtitle{font-size:10px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-top:6px;}
+  .peildatum{font-size:9px;color:var(--gold);letter-spacing:1px;margin-top:8px;}
+  .layout{max-width:960px;margin:0 auto;display:grid;grid-template-columns:275px 1fr;gap:24px;align-items:start;}
+  .panel{background:var(--cream);border:1px solid var(--rule);padding:22px;}
+  .panel.sticky{position:sticky;top:16px;}
+  .panel-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;padding-bottom:9px;border-bottom:1px solid var(--rule);}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:5px;}
+  select,input[type=number]{width:100%;background:var(--paper);border:1px solid var(--rule);color:var(--ink);font-family:'DM Mono',monospace;font-size:13px;padding:9px 11px;outline:none;transition:border-color .2s;appearance:none;-webkit-appearance:none;}
+  select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23b89a4e'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px;cursor:pointer;}
+  select:focus,input:focus{border-color:var(--gold);}
+  input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{opacity:0;}
+  .hint{font-size:10px;color:var(--dim);margin-top:4px;line-height:1.5;}
+  .saldo-box{background:var(--ink);color:var(--paper);padding:10px 13px;margin-bottom:14px;}
+  .saldo-box .sb-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:3px;}
+  .saldo-box .sb-val{font-size:15px;}
+  .divider{height:1px;background:var(--rule);margin:14px 0;}
+  .btn{width:100%;background:var(--ink);color:var(--gold);border:none;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;padding:12px;cursor:pointer;transition:background .2s;}
+  .btn:hover{background:var(--gold);color:var(--ink);}
+  .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:260px;color:var(--dim);text-align:center;border:1px dashed var(--rule);}
+  .empty-icon{font-size:30px;margin-bottom:12px;opacity:.35;}
+  .empty p{font-size:10px;letter-spacing:2px;text-transform:uppercase;line-height:1.8;}
+  .r-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;}
+  .r-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:400;}
+  .r-sub{font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;}
+  .summary-strip{background:var(--ink);color:var(--paper);padding:13px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;}
+  .si label{color:var(--gold);font-size:8px;letter-spacing:2px;text-transform:uppercase;}
+  .si .val{font-size:13px;margin-top:3px;}
+  .si .val.neg{color:#f08080;}
+  .si .val.dim{color:#aaa;}
+  .positie{margin-bottom:18px;}
+  .pos-header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--ink);padding-bottom:5px;margin-bottom:7px;}
+  .pos-naam{font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--dim);}
+  .pos-meta{font-size:10px;color:var(--sage);}
+  .pos-skip{font-size:10px;color:var(--dim);padding:5px 0;font-style:italic;}
+  .ontvanger{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:7px 0;border-bottom:1px solid var(--cream);align-items:center;animation:fi .2s ease;}
+  @keyframes fi{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+  .o-naam{font-size:12px;}
+  .o-note{font-size:10px;color:var(--dim);text-align:right;max-width:160px;line-height:1.3;}
+  .o-bedrag{font-size:13px;font-weight:500;text-align:right;min-width:85px;}
+  .o-bedrag.pos{color:var(--sage);}.o-bedrag.neg{color:var(--rust);}.o-bedrag.nil{color:var(--dim);}
+  .totaal{margin-top:22px;border-top:2px solid var(--gold);padding-top:13px;}
+  .totaal-kop{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:9px;}
+  .t-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--cream);}
+  .t-row .naam{font-size:12px;}.t-row .bedrag{font-size:13px;font-weight:500;color:var(--sage);}
+  .t-row.neg .bedrag{color:var(--rust);}
+  .t-row.grand{margin-top:8px;padding-top:8px;border-top:1px solid var(--rule);border-bottom:none;}
+  .t-row.grand .naam{font-family:'Playfair Display',serif;font-size:13px;}
+  .t-row.grand .bedrag{font-size:15px;color:var(--ink);}
+  .verificatie{margin-top:9px;padding:7px 11px;font-size:9px;letter-spacing:.4px;line-height:1.7;border-left:3px solid;}
+  .verificatie.ok{border-color:var(--sage);color:var(--sage);background:rgba(61,90,71,.07);}
+  .verificatie.warn{border-color:var(--gold);color:#7a5e18;background:rgba(184,154,78,.1);}
+  .info{font-size:10px;color:var(--dim);margin-bottom:13px;padding:7px 11px;border-left:2px solid var(--rule);line-height:1.6;}
+  .badge{display:inline-block;background:var(--gold);color:var(--ink);font-size:8px;letter-spacing:1px;padding:2px 6px;text-transform:uppercase;}
+  .badge.neg{background:var(--rust);color:#fff;}
+  @media(max-width:680px){.layout{grid-template-columns:1fr;}.panel.sticky{position:static;}.summary-strip{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Topkapi Rights I</div>
+  <h1>Recoupment Calculator</h1>
+  <p class="subtitle">Statement verdelingsoverzicht</p>
+  <p class="peildatum">Peilstand: 31-12-2025 — TKR1_recoupmentschemas_totaal.xlsx</p>
+</header>
+<div class="layout">
+  <aside class="panel sticky">
+    <div class="panel-label">Statement invoer</div>
+    <div class="field">
+      <label>Productie</label>
+      <select id="sel-film" onchange="onFilmChange()">
+        <option value="">— kies productie —</option>
+        <optgroup label="A">
+          <option value="ail">Alles is Liefde</option>
+          <option value="alles_stroomt">Alles Stroomt</option>
+          <option value="amazones">Amazones</option>
+          <option value="amnesia">Amnesia</option>
+          <option value="amnm">Alleen Maar Nette Mensen</option>
+          <option value="ander_geluk">Een Ander Zijn Geluk</option>
+        </optgroup>
+        <optgroup label="B–C">
+          <option value="bb">Black Butterflies</option>
+          <option value="bride_flight">Bride Flight</option>
+          <option value="bride_flight_roman">Bride Flight Roman</option>
+          <option value="brcircle">The Broken Circle Breakdown</option>
+          <option value="cloaca">Cloaca</option>
+          <option value="code_blue">Code Blue</option>
+        </optgroup>
+        <optgroup label="D–F">
+          <option value="diseurs">Les Diseurs de Vérité</option>
+          <option value="drift">Drift</option>
+          <option value="dho">De Heineken Ontvoering</option>
+          <option value="echte_leven">Het Echte Leven</option>
+          <option value="eilandgasten">Eilandgasten</option>
+          <option value="escort">Escort</option>
+          <option value="familie">Familie</option>
+          <option value="first_mission">First Mission</option>
+          <option value="fuik">De Fuik</option>
+        </optgroup>
+        <optgroup label="G–H">
+          <option value="geheim">Het Geheim</option>
+          <option value="helaasheid">De Helaasheid der Dingen</option>
+          <option value="hitte">Hitte Harara</option>
+          <option value="armen">Ik omhels je met 1000 Armen</option>
+        </optgroup>
+        <optgroup label="I–L">
+          <option value="in_oranje">In Oranje</option>
+          <option value="isabelle">Isabelle</option>
+          <option value="jackie">Jackie</option>
+          <option value="joy">Joy</option>
+          <option value="julias_hart">Julia's Hart</option>
+          <option value="langer_licht">Langer Licht</option>
+          <option value="layla_fourie">Layla Fourie</option>
+          <option value="loverboy">Loverboy</option>
+        </optgroup>
+        <optgroup label="M–N">
+          <option value="blijdschap">Met grote Blijdschap</option>
+          <option value="monte_carlo">Monte Carlo</option>
+          <option value="my_queen">My Queen Karo</option>
+          <option value="nick">Nick</option>
+        </optgroup>
+        <optgroup label="P–R">
+          <option value="paradise">Paradise Girls</option>
+          <option value="phileine">Phileine zegt Sorry</option>
+          <option value="poolse_bruid">De Poolse Bruid</option>
+          <option value="ru_there">R U There</option>
+        </optgroup>
+        <optgroup label="S–T">
+          <option value="schlafkrankheit">Schlafkrankheit</option>
+          <option value="temmink">Temmink</option>
+          <option value="tiramisu">Tiramisu</option>
+          <option value="tribunal">Tribunal</option>
+          <option value="teetje">Trip van Teetje</option>
+          <option value="tweeling_nl">De Tweeling (NL)</option>
+          <option value="tweeling_row">De Tweeling (ROW)</option>
+        </optgroup>
+        <optgroup label="U–Z">
+          <option value="uitverkorene">De Uitverkorene</option>
+          <option value="vreemd_bloed">Vreemd Bloed</option>
+          <option value="wijster">Wijster</option>
+          <option value="witte_vis">Witte Vis</option>
+          <option value="zadelpijn">Zadelpijn</option>
+        </optgroup>
+      </select>
+    </div>
+    <div id="saldo-display" style="display:none"></div>
+    <div class="field">
+      <label id="bedrag-label">Nieuw bedrag statement (€)</label>
+      <input type="number" id="inp-bedrag" placeholder="0.00" step="0.01" oninput="resetResult()">
+      <p class="hint" id="bedrag-hint">Positief = inkomsten. Negatief = kosten/creditnota.</p>
+    </div>
+    <div class="divider"></div>
+    <button class="btn" onclick="calculate()">Bereken verdeling</button>
+  </aside>
+  <main>
+    <div id="empty" class="empty">
+      <div class="empty-icon">⊘</div>
+      <p>Kies een productie<br>en voer een bedrag in</p>
+    </div>
+    <div id="result" style="display:none"></div>
+  </main>
+</div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════════
+// SALDI — rechtstreeks gelezen uit Excel kolom D (netto te recoupen)
+// Correcte rij per sheet (niet rij 7 "over" bij A-Film projecten,
+// maar de "overige inkomsten" netto rij).
+// Projecten met 30% kosten-contract: saldo = netto NA kostenaftrek.
+// ═══════════════════════════════════════════════════════════════════
+const SALDI = {
+  ail:              { netto_cum: 2507174.70 },
+  alles_stroomt:    { netto_cum: 9983.21 },        // rij 10 overige inkomsten
+  amazones:         { netto_cum: 0.00 },            // netto=0 na A-Film MG inhouding
+  amnesia:          { netto_cum: 0.00 },            // netto=0 na A-Film MG inhouding
+  amnm:             { netto_cum: 823044.88 },       // rij 6
+  ander_geluk:      { netto_cum: -765.00 },
+  bb:               { netto_cum: 33336.84 },
+  bride_flight:     { netto_cum: 570724.44 },       // rij 9 BRIDE FLIGHT TOTAL
+  bride_flight_roman:{ netto_cum: 54554.09 },       // rij 8 BRIDE FLIGHT ROMAN - TOTAAL
+  brcircle:         { netto_cum: 118953.97 },
+  cloaca:           { netto_cum: 104841.09 },       // rij 6 (bruto netto vóór pos1)
+  code_blue:        { netto_cum: 0.00 },            // inkomsten=0, kosten=10332 → netto<0 → 0
+  diseurs:          { netto_cum: 17312.34 },
+  drift:            { netto_cum: 1575.00 },
+  dho:              { netto_cum: 197213.44 },
+  echte_leven:      { netto_cum: 18011.70 },        // rij 11 overige inkomsten
+  eilandgasten:     { netto_cum: 1813.00 },
+  escort:           { netto_cum: 0.00 },
+  familie:          { netto_cum: 6358.997 },        // rij 18
+  first_mission:    { netto_cum: 6865.77 },
+  fuik:             { netto_cum: 687.043 },
+  geheim:           { netto_cum: 172209.55 },
+  helaasheid:       { netto_cum: 155307.15 },
+  hitte:            { netto_cum: 4219.705 },
+  armen:            { netto_cum: 4450.53 },         // rij 10 overige inkomsten
+  in_oranje:        { netto_cum: 68856.27 },
+  isabelle:         { netto_cum: 6455.13 },         // rij 9 (na kosten)
+  jackie:           { netto_cum: -217.16 },
+  joy:              { netto_cum: 7357.45 },          // rij 11 overige inkomsten
+  julias_hart:      { netto_cum: 0.00 },
+  langer_licht:     { netto_cum: 33112.70 },
+  layla_fourie:     { netto_cum: 3774.64 },
+  loverboy:         { netto_cum: 0.00 },            // 30% kosten contract, netto=0
+  blijdschap:       { netto_cum: 10163.32 },        // rij 11
+  monte_carlo:      { netto_cum: -22925.42 },
+  my_queen:         { netto_cum: 9010.17 },
+  nick:             { netto_cum: 0.00 },            // netto=0 na Wild Bunch MG
+  paradise:         { netto_cum: -6354.47 },
+  phileine:         { netto_cum: 47603.58 },
+  poolse_bruid:     { netto_cum: 0.00 },
+  ru_there:         { netto_cum: 11183.84 },
+  schlafkrankheit:  { netto_cum: 1350.00 },
+  temmink:          { netto_cum: 2000.00 },
+  tiramisu:         { netto_cum: 1569.90 },         // rij 10 overige inkomsten
+  tribunal:         { netto_cum: 489.68 },
+  teetje:           { netto_cum: 1750.00 },
+  tweeling_nl:      { netto_cum: 1202070.23 },
+  tweeling_row:     { netto_cum: 409424.12 },
+  uitverkorene:     { netto_cum: 8068.984 },
+  vgl:              { netto_cum: 304486.28 },       // rij 10 VGL-COBO (grootste)
+  vreemd_bloed:     { netto_cum: 1086.01 },         // rij 10 overige inkomsten
+  wijster:          { netto_cum: 0.00 },
+  witte_vis:        { netto_cum: 687.043 },
+  zadelpijn:        { netto_cum: 7284.116 },
+};
+
+// Projecten met 30% kostenvergoeding conform contract
+// Bij invoer bruto statement: 30% → TKR1 als kosten, 70% te verdelen
+const KOSTEN_30 = new Set([
+  'eilandgasten','fuik','witte_vis','zadelpijn','uitverkorene',
+  'loverboy','escort','julias_hart','cloaca','hitte'
+]);
+
+// ═══════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════
+const fmt = n => {
+  if (Math.abs(n) < 0.005) return '—';
+  return (n<0?'−':'') + '€\u202f' + Math.abs(n).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});
+};
+const cls = n => Math.abs(n)<0.005?'nil':n<0?'neg':'pos';
+
+function delta_K(K_oud, K_nieuw) {
+  const d = {};
+  for (const k of new Set([...Object.keys(K_oud),...Object.keys(K_nieuw)])) {
+    const diff = (K_nieuw[k]||0) - (K_oud[k]||0);
+    if (Math.abs(diff) >= 0.005) d[k] = diff;
+  }
+  return d;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// WATERVALLEN — alle schema's rechtstreeks uit Excel gelezen
+// ═══════════════════════════════════════════════════════════════════
+
+// AIL — Alles is Liefde
+// pos1: CoBO 50% + TKR1 50% cap €864.568 elk; pos2: TKR1 100% cap €400k
+// pos3: NFF 70% + TKR1 30% cap €826.527; NPI: TKR1 bruto → makers 40%
+function waterval_ail(n) {
+  const P1_CAP = 864567.86*2;
+  const p1 = Math.min(n, P1_CAP); const r1 = n - p1;
+  const p2 = Math.min(r1, 400000); const r2 = r1 - p2;
+  const p3 = Math.min(r2, 826527); const r3 = r2 - p3;
+  const p3_nff = p3*0.70, p3_tkr1 = p3*0.30;
+  const tkr1_bruto = p1/2 + p2 + p3_tkr1;
+  const fuworks = tkr1_bruto*0.20, finales = tkr1_bruto*0.06;
+  const money = tkr1_bruto*0.04, dnhgb = tkr1_bruto*0.10;
+  const tkr1 = tkr1_bruto - fuworks - finales - money - dnhgb;
+  return {
+    posities:[
+      {naam:'Pos1 — CoBO & TKR1 (cap €1.729.136)',pool:P1_CAP,deelbaar:p1,
+        ontvangers:[{naam:'CoBO-Fonds',bedrag:p1/2,note:'50%'},{naam:'Topkapi Rights I',bedrag:p1/2,note:'50%'}]},
+      {naam:'Pos2 — TKR1 (cap €400.000)',pool:400000,deelbaar:p2,
+        ontvangers:[{naam:'Topkapi Rights I',bedrag:p2,note:'100%'}]},
+      {naam:'Pos3 — NFF 70% & TKR1 30% (cap €826.527)',pool:826527,deelbaar:p3,
+        ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p3_nff,note:'70%'},{naam:'Topkapi Rights I',bedrag:p3_tkr1,note:'30%'}]},
+      {naam:'NPI — makers van TKR1 bruto',deelbaar:tkr1_bruto,
+        ontvangers:[
+          {naam:'Topkapi Rights I',bedrag:tkr1,note:'60% (netto)'},
+          {naam:'Fu Works Productions B.V.',bedrag:fuworks,note:'20%'},
+          {naam:'DNHGB BV',bedrag:dnhgb,note:'10%'},
+          {naam:'De Finales B.V.',bedrag:finales,note:'6%'},
+          {naam:'Moneypenny B.V.',bedrag:money,note:'4%'},
+        ]}
+    ],
+    totalen_K:{'CoBO-Fonds':p1/2,'Topkapi Rights I':tkr1,'Stichting Nederlands Fonds voor de Film':p3_nff,
+      'Fu Works Productions B.V.':fuworks,'DNHGB BV':dnhgb,'De Finales B.V.':finales,'Moneypenny B.V.':money}
+  };
+}
+
+// ALLES STROOMT — 50/50 NFF + TKR1 (cap 22.500 elk; cap al bereikt → saldo 9983 is boven cap)
+function waterval_alles_stroomt(n) {
+  const nff=n*0.50, tkr1=n*0.50;
+  return {
+    posities:[{naam:'Eerste positie — NFF 50% & TKR1 50%',deelbaar:n,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:nff,note:'50%'},{naam:'Topkapi Rights I',bedrag:tkr1,note:'50%'}]}],
+    totalen_K:{'Stichting Nederlands Fonds voor de Film':nff,'Topkapi Rights I':tkr1}
+  };
+}
+
+// AMAZONES — saldo 0 na A-Film MG, eerste inkomsten gaan naar pos1 Fine+A-Film
+function waterval_amazones(n) {
+  return {posities:[{naam:'Eerste positie — CV (Fine & A-Film)',deelbaar:n,
+    ontvangers:[{naam:'CV-participanten (Fine & A-Film)',bedrag:n,note:'100% — tot €313.703'}]}],
+    totalen_K:{'CV-participanten (Fine & A-Film)':n},
+    info:'Amazones: pos1 = 68,1% Fine + 31,9% A-Film (tot €313.703). TKR1 ontvangt pas in pos2+.'};
+}
+
+// AMNESIA — pos1 TKR1 cap 5.445; pos2 NFF 46.81% + VPRO 53.19% cap 170.621;
+//           pos3 CoBO 90.80% + RFF 9.20% cap 197.394; pos4 NFF/Stifo 70% + TKR1 30%
+function waterval_amnesia(n) {
+  const p1=Math.min(n,5445); const r1=n-p1;
+  const p2=Math.min(r1,170621); const r2=r1-p2;
+  const p2_nff=p2*0.4680842335, p2_vpro=p2*0.5319157665;
+  const p3=Math.min(r2,197394); const r3=r2-p3;
+  const p3_cobo=p3*0.9080468505, p3_rff=p3*0.0919531495;
+  const p4=r3; const p4_nff=p4*0.5847047294, p4_stifo=p4*0.1152952706, p4_tkr1=p4*0.30;
+  return {
+    posities:[
+      {naam:'Pos1 — TKR1 investering (cap €5.445)',pool:5445,deelbaar:p1,ontvangers:[{naam:'Topkapi Rights I',bedrag:p1,note:'100%'}]},
+      {naam:'Pos2 — NFF & VPRO (cap €170.621)',pool:170621,deelbaar:p2,
+        ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p2_nff,note:'46,81%'},{naam:'VPRO Omroepvereniging',bedrag:p2_vpro,note:'53,19%'}]},
+      {naam:'Pos3 — CoBO & RFF (cap €197.394)',pool:197394,deelbaar:p3,
+        ontvangers:[{naam:'CoBO-Fonds',bedrag:p3_cobo,note:'90,80%'},{naam:'Rotterdams Filmfonds',bedrag:p3_rff,note:'9,20%'}]},
+      {naam:'Pos4 — NFF/Stifo 70% & TKR1 30%',deelbaar:p4,
+        ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p4_nff,note:'58,47%'},{naam:'Stifo Fonds',bedrag:p4_stifo,note:'11,53%'},{naam:'Topkapi Rights I',bedrag:p4_tkr1,note:'30%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+    ],
+    totalen_K:{'Topkapi Rights I':p1+p4_tkr1,'Stichting Nederlands Fonds voor de Film':p2_nff+p4_nff,
+      'VPRO Omroepvereniging':p2_vpro,'CoBO-Fonds':p3_cobo,'Rotterdams Filmfonds':p3_rff,'Stifo Fonds':p4_stifo}
+  };
+}
+
+// AMNM — Alleen Maar Nette Mensen (complex, zie analyse)
+function waterval_amnm(n) {
+  const P0_WB=228600,P1_WB=87744,P1_SKY=50000,P2_WB=140856,P2_TKR=80265;
+  const p0_wb=Math.min(n*0.6370081435,P0_WB);
+  const r0=n-p0_wb; const p0_sky=Math.min(r0*0.3629918565,50000); const r0b=r0-p0_sky;
+  const p1_wb=Math.min(r0b*0.637007782553142,P1_WB);
+  const r1=r0b-p1_wb; const p1_sky=Math.min(r1,P1_SKY-p0_sky); const r1b=r1-p1_sky;
+  const p2_wb=Math.min(r1b*0.6370086966,P2_WB); const r2=r1b-p2_wb;
+  const p2_tkr=Math.min(r2,P2_TKR); const r3=r2-p2_tkr;
+  const p3_nff=Math.min(r3*0.7791,891887); const p3_cobo=Math.min(r3*0.2209,252818);
+  const nff_ret=p3_nff*0.50;
+  const ret_singel=nff_ret*0.05, ret_lodewijk=nff_ret*0.10, ret_sep=nff_ret*0.40;
+  const ret_motel=nff_ret*0.10, ret_sky=nff_ret*0.05;
+  const ret_tkr1=nff_ret*0.30-ret_motel;
+  return {
+    posities:[
+      {naam:'Equity — Wildbunch & Skystone',deelbaar:p0_wb+p0_sky,
+        ontvangers:[{naam:'Wildbunch (equity)',bedrag:p0_wb,note:'63,70% cap €228.600'},{naam:'Skystone (equity)',bedrag:p0_sky,note:'13,93% cap €50.000'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+      {naam:'Pos1 — Wildbunch & Skystone',pool:P1_WB+P1_SKY,deelbaar:p1_wb+p1_sky,
+        ontvangers:[{naam:'Wildbunch',bedrag:p1_wb,note:'63,70% cap €87.744'},{naam:'Skystone',bedrag:p1_sky,note:'restant cap €50.000'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+      {naam:'Pos2 — Wildbunch & TKR1',pool:P2_WB+P2_TKR,deelbaar:p2_wb+p2_tkr,
+        ontvangers:[{naam:'Wildbunch',bedrag:p2_wb,note:'63,70% cap €140.856'},{naam:'Topkapi Rights I',bedrag:p2_tkr,note:'36,30% cap €80.265'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+      {naam:'Pos3 — NFF & CoBO (cap €1.144.705)',pool:1144705,deelbaar:r3,
+        ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p3_nff,note:'77,91% (bruto)'},{naam:'Nederlands Film Fonds',bedrag:-nff_ret,note:'−50% retour → investeerders'},{naam:'CoBO-Fonds',bedrag:p3_cobo,note:'22,09%'}]},
+      {naam:'NFF retour — investeerders & NPI',deelbaar:nff_ret,
+        ontvangers:[{naam:'September Film',bedrag:ret_sep,note:'40%'},{naam:'Topkapi Rights I',bedrag:ret_tkr1,note:'30% − 10% Motel (netto 20%)'},{naam:'Motel de Ville BV',bedrag:ret_motel,note:'10%, via TKR1'},{naam:'Skystone Entertainment v.o.f.',bedrag:ret_sky,note:'5%'},{naam:'Lodewijk Crijns (NPI)',bedrag:ret_lodewijk,note:'10% (schrijver+regisseur)'},{naam:'Singel Uitgeverij BV (NPI)',bedrag:ret_singel,note:'5%'}]}
+    ],
+    totalen_K:{'Wildbunch':p0_wb+p1_wb+p2_wb,'Skystone':p0_sky+p1_sky+ret_sky,
+      'Topkapi Rights I':p2_tkr+ret_tkr1,'Stichting Nederlands Fonds voor de Film':p3_nff,
+      'Nederlands Film Fonds':-nff_ret,'CoBO-Fonds':p3_cobo,'September Film':ret_sep,
+      'Motel de Ville BV':ret_motel,'Lodewijk Crijns':ret_lodewijk,'Singel Uitgeverij BV':ret_singel},
+    info:'AMNM: Wildbunch-aandelen worden ingehouden op het statement en lopen niet via TKR1.'
+  };
+}
+
+// ANDER ZIJN GELUK — pos1 TKR1 cap €23.358; pos2 NFF 70% cap 168k + TKR1 30% (Fien Troch 10% van TKR1)
+function waterval_ander_geluk(n) {
+  const p1=Math.min(n,23358); const r1=n-p1;
+  const p2_nff=Math.min(r1*0.70,168000*0.70); const p2_tkr_b=r1*0.30;
+  const fien=p2_tkr_b*0.10, p2_tkr=p2_tkr_b-fien;
+  return {
+    posities:[
+      {naam:'Pos1 — TKR1 eigen investering (cap €23.358)',pool:23358,deelbaar:p1,ontvangers:[{naam:'Topkapi Rights I',bedrag:p1,note:'100%'}]},
+      {naam:'Pos2 — NFF 70% (cap €168.000) & TKR1 30%',deelbaar:r1,
+        ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p2_nff,note:'70% cap €168.000'},{naam:'Topkapi Rights I',bedrag:p2_tkr,note:'30% − 10% Fien Troch'},{naam:'Fien Troch (regie)',bedrag:fien,note:'10% van TKR1-deel'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+    ],
+    totalen_K:{'Topkapi Rights I':p1+p2_tkr,'Stichting Nederlands Fonds voor de Film':p2_nff,'Fien Troch (regie)':fien}
+  };
+}
+
+// BLACK BUTTERFLIES — pos1 TKR1 100% cap 500k (makers 32% van TKR1); pos2 CoBO 35% + TKR1 32,5% + Comet 32,5%
+function waterval_bb(n) {
+  const p1=Math.min(n,500000); const r1=n-p1;
+  const arrie=p1*0.11, richard=p1*0.1592, paula=p1*0.05, tkr1_p1=p1-arrie-richard-paula;
+  const p2=r1; const p2_cobo=Math.min(p2*0.35,102000), p2_tkr=Math.min(p2*0.325,94500), p2_comet=Math.min(p2*0.325,94500);
+  return {
+    posities:[
+      {naam:'Pos1 — TKR1 (cap €500.000), makers van TKR1-deel',pool:500000,deelbaar:p1,
+        ontvangers:[{naam:'Topkapi Rights I',bedrag:tkr1_p1,note:'100% − 32%'},{naam:'Cool Beans BV (Richard Claus)',bedrag:richard,note:'15,92%'},{naam:'A.L. Voorsmit',bedrag:arrie,note:'11,00%'},{naam:'Paula van der Oest',bedrag:paula,note:'5,00%'}]},
+      {naam:'Pos2 — CoBO 35%, TKR1 32,5%, Comet 32,5%',deelbaar:r1,
+        ontvangers:[{naam:'CoBO-Fonds',bedrag:p2_cobo,note:'35% cap €102.000'},{naam:'Topkapi Rights I',bedrag:p2_tkr,note:'32,5% cap €94.500'},{naam:'Comet Film (DE)',bedrag:p2_comet,note:'32,5% cap €94.500'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+    ],
+    totalen_K:{'Topkapi Rights I':tkr1_p1+p2_tkr,'Cool Beans BV (Richard Claus)':richard,'A.L. Voorsmit':arrie,'Paula van der Oest':paula,'CoBO-Fonds':p2_cobo,'Comet Film (DE)':p2_comet}
+  };
+}
+
+// BRIDE FLIGHT — pos1 Chios Media 100% cap €600k; pos2 TKR1 cap €140k
+function waterval_bride_flight(n) {
+  const p1=Math.min(n,600000); const r1=n-p1;
+  const p2=Math.min(r1,140000); const r2=r1-p2;
+  return {
+    posities:[
+      {naam:'Pos1 — Chios Media (cap €600.000)',pool:600000,deelbaar:p1,ontvangers:[{naam:'Chios Media B.V.',bedrag:p1,note:'100%'}]},
+      {naam:'Pos2 — TKR1 (cap €140.000)',pool:140000,deelbaar:p2,ontvangers:[{naam:'Topkapi Rights I',bedrag:p2,note:'100%'}]},
+      {naam:'Verdere posities',deelbaar:r2,ontvangers:[{naam:'Verdere verdeling',bedrag:r2,note:'zie schema'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+    ],
+    totalen_K:{'Chios Media B.V.':p1,'Topkapi Rights I':p2}
+  };
+}
+
+// BRIDE FLIGHT ROMAN — pos1 Frans van Gestel 60% + Arnold Heslenfeld 40%
+function waterval_bride_flight_roman(n) {
+  return {
+    posities:[{naam:'Eerste positie — Frans van Gestel & Arnold Heslenfeld',deelbaar:n,
+      ontvangers:[{naam:'Armada Films (Frans van Gestel)',bedrag:n*0.60,note:'60%'},{naam:'A. Heslenfeld Producties BV',bedrag:n*0.40,note:'40%'}]}],
+    totalen_K:{'Armada Films (Frans van Gestel)':n*0.60,'A. Heslenfeld Producties BV':n*0.40}
+  };
+}
+
+// BROKEN CIRCLE BREAKDOWN — pos1 Eurimages ~12,17% van bruto; pos2 TKR1 MG cap 15k; pos3 TKR1 deferral+garantie cap 139k
+function waterval_brcircle(n) {
+  const EUR_PCT=12452.72127/118953.97;
+  const eur=n*EUR_PCT; const rest=n-eur;
+  const p2=Math.min(rest,15000); const r2=rest-p2;
+  const p3=Math.min(r2,139000); const r3=r2-p3;
+  const p4_nff=r3*0.8783;
+  return {
+    posities:[
+      {naam:'Pos1 — Eurimages (~12,17% van bruto)',deelbaar:eur,ontvangers:[{naam:"Conseil de l'Europe",bedrag:eur,note:'12,17%'}]},
+      {naam:'Pos2 — TKR1 MG (cap €15.000)',pool:15000,deelbaar:p2,ontvangers:[{naam:'Topkapi Rights I',bedrag:p2,note:'100%'}]},
+      {naam:'Pos3 — TKR1 deferral+garantie (cap €139.000)',pool:139000,deelbaar:p3,ontvangers:[{naam:'Topkapi Rights I',bedrag:p3,note:'100%'}]},
+      {naam:'Pos4 — NFF (cap €150.000)',pool:150000,deelbaar:r3,ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p4_nff,note:'87,83%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+    ],
+    totalen_K:{"Conseil de l'Europe":eur,'Topkapi Rights I':p2+p3,'Stichting Nederlands Fonds voor de Film':p4_nff}
+  };
+}
+
+// CLOACA — 30% kosten contract (al verwerkt vóór aanroep)
+// pos1 NFF 50% cap 67.550; pos2 makers 23% van producentendeel (33% van rest)
+// pos3 1/3 CoBO + 1/3 AVROTROS + 1/3 TKR1
+function waterval_cloaca(n) {
+  const p1=Math.min(n*0.50,67550); const r1=n-p1;
+  const prod_pool=r1*0.33;
+  const goos=prod_pool*0.10, wsb=prod_pool*0.05, bokma=prod_pool*0.02;
+  const blok=prod_pool*0.02, gijs=prod_pool*0.02, spijk=prod_pool*0.02;
+  const p3=r1-goos-wsb-bokma-blok-gijs-spijk;
+  const cobo=p3/3, avro=p3/3, tkr1=p3/3;
+  return {
+    posities:[
+      {naam:'Pos1 — NFF (50% van netto, cap €67.550)',pool:67550,deelbaar:p1,ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p1,note:'50% cap €67.550'}]},
+      {naam:'Pos2 — makers (33% van producentendeel)',deelbaar:prod_pool,
+        ontvangers:[{naam:'Maria Goos',bedrag:goos,note:'10%'},{naam:'W.H. van de Sande Bakhuyzen',bedrag:wsb,note:'5%'},{naam:'Pierre Bokma',bedrag:bokma,note:'2%'},{naam:'Peter Blok',bedrag:blok,note:'2%'},{naam:'Gijs Scholten van Aschat',bedrag:gijs,note:'2%'},{naam:'Jaap Spijkers',bedrag:spijk,note:'2%'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+      {naam:'Pos3 — CoBO, AVROTROS & TKR1 (elk 1/3)',deelbaar:p3,
+        ontvangers:[{naam:'CoBO-Fonds',bedrag:cobo,note:'33,33%'},{naam:'AVROTROS',bedrag:avro,note:'33,33%'},{naam:'Topkapi Rights I',bedrag:tkr1,note:'33,33%'}]}
+    ],
+    totalen_K:{'Stichting Nederlands Fonds voor de Film':p1,'Maria Goos':goos,'W.H. van de Sande Bakhuyzen':wsb,
+      'Pierre Bokma':bokma,'Peter Blok':blok,'Gijs Scholten van Aschat':gijs,'Jaap Spijkers':spijk,
+      'CoBO-Fonds':cobo,'AVROTROS':avro,'Topkapi Rights I':tkr1}
+  };
+}
+
+// CODE BLUE — kosten (10.332) worden eerst afgetrokken; dan pos1 NFF 28,95% + TKR1 28,95% + TKR1 B.V. 42,1%
+// pos2 TKR1 45,22% + CoBO 45,22% + Zentropa 9,57%; pos3 NFF 71,2% + Mediafonds 22,7% + CoBO extra 6,1% + TKR1 27,1%
+const CODE_BLUE_KOSTEN = 10332.58;
+function waterval_code_blue(n) {
+  const netto = Math.max(0, n - CODE_BLUE_KOSTEN);
+  const kosten = n - netto;
+  const p1_nff=netto*0.2895, p1_tkr=netto*0.2895, p1_tkrb=netto*0.421;
+  const fien=p1_tkr*0.10, p1_tkr_net=p1_tkr-fien;
+  return {
+    posities:[
+      {naam:`Kosten (€${CODE_BLUE_KOSTEN.toLocaleString('nl-NL')} af te trekken)`,deelbaar:kosten,
+        ontvangers:[{naam:'Topkapi Rights I (kosten)',bedrag:kosten,note:'kosten vóór verdeling'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+      {naam:'Pos1 — NFF 28,95%, TKR1 28,95%, TKR1 B.V. 42,1%',deelbaar:netto,
+        ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p1_nff,note:'28,95%'},{naam:'Topkapi Rights I',bedrag:p1_tkr_net,note:'28,95% − 10% Ursula Antoniak'},{naam:'Ursula Antoniak',bedrag:fien,note:'10% van TKR1-deel'},{naam:'Topkapi Rights I B.V.',bedrag:p1_tkrb,note:'42,10%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+    ],
+    totalen_K:{'Topkapi Rights I':kosten+p1_tkr_net,'Stichting Nederlands Fonds voor de Film':p1_nff,'Ursula Antoniak':fien,'Topkapi Rights I B.V.':p1_tkrb}
+  };
+}
+
+// LES DISEURS DE VÉRITÉ — pos1 NTR cap €68.067; pos2 CoBO cap €22.689; pos3 NFF/CoBO extra
+function waterval_diseurs(n) {
+  const p1=Math.min(n,68067); const r1=n-p1;
+  const p2=Math.min(r1,22689); const r2=r1-p2;
+  const p3_nff=r2*0.70, p3_cobo=r2*0.30;
+  return {
+    posities:[
+      {naam:'Pos1 — NTR (cap €68.067)',pool:68067,deelbaar:p1,ontvangers:[{naam:'NTR (voorheen NPS)',bedrag:p1,note:'100%'}]},
+      {naam:'Pos2 — CoBO (cap €22.689)',pool:22689,deelbaar:p2,ontvangers:[{naam:'CoBO-Fonds',bedrag:p2,note:'100%'}]},
+      {naam:'Pos3 — NFF 70% & CoBO 30% (cap €215.546 NFF + €113.445 CoBO)',deelbaar:r2,
+        ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p3_nff,note:'70% (verdeling 70/30)'},{naam:'CoBO-Fonds',bedrag:p3_cobo,note:'30%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+    ],
+    totalen_K:{'NTR (voorheen NPS)':p1,'CoBO-Fonds':p2+p3_cobo,'Stichting Nederlands Fonds voor de Film':p3_nff}
+  };
+}
+
+// DRIFT — pos1 TKR1 60% + Waterland 40% (cap €4.538 totaal);
+//         pos2 CoBO 68,42% + NFF 31,58% (cap €215.546); pos3 NFF+Stifo 70% + TKR1+Waterland 30%
+function waterval_drift(n) {
+  const CAP1=4538;
+  const p1=Math.min(n,CAP1); const r1=n-p1;
+  const p1_tkr=p1*0.60, p1_water=p1*0.40;
+  const p2=Math.min(r1,215546); const r2=r1-p2;
+  const p2_cobo=p2*0.6842112588, p2_nff=p2*0.3157887412;
+  const p3=r2; const p3_nff=p3*0.45, p3_stifo=p3*0.25, p3_tkr=p3*0.486*0.30, p3_water=p3*0.324*0.30;
+  return {
+    posities:[
+      {naam:'Pos1 — TKR1 60% & Waterland 40% (cap €4.538)',pool:CAP1,deelbaar:p1,
+        ontvangers:[{naam:'Topkapi Rights I',bedrag:p1_tkr,note:'60%'},{naam:'Waterland Film',bedrag:p1_water,note:'40%'}]},
+      {naam:'Pos2 — CoBO 68,42% & NFF 31,58% (cap €215.546)',pool:215546,deelbaar:p2,
+        ontvangers:[{naam:'CoBO-Fonds',bedrag:p2_cobo,note:'68,42%'},{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p2_nff,note:'31,58%'}]},
+      {naam:'Pos3 — NFF+Stifo 70%, Producenten 30%',deelbaar:r2,
+        ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p3_nff,note:'45%'},{naam:'Stifo Fonds',bedrag:p3_stifo,note:'25%'},{naam:'Topkapi Rights I',bedrag:p3_tkr,note:'14,58% (30%×48,6%)'},{naam:'Waterland Film & TV',bedrag:p3_water,note:'9,72% (30%×32,4%)'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+    ],
+    totalen_K:{'Topkapi Rights I':p1_tkr+p3_tkr,'Waterland Film':p1_water,'Waterland Film & TV':p3_water,
+      'CoBO-Fonds':p2_cobo,'Stichting Nederlands Fonds voor de Film':p2_nff+p3_nff,'Stifo Fonds':p3_stifo}
+  };
+}
+
+// DE HEINEKEN ONTVOERING — pos1 TKR1 100% cap €218.163; pos2 NFF 64% + CoBO 36%
+function waterval_dho(n) {
+  const p1=Math.min(n,218163); const r1=n-p1;
+  const p2_nff=r1*0.64, p2_cobo=r1*0.36;
+  const nff_ret=p2_nff*0.50;
+  const ret_tkr=nff_ret*0.86, ret_kees=nff_ret*0.02, ret_scen=nff_ret*0.02, ret_regie=nff_ret*0.10;
+  return {
+    posities:[
+      {naam:'Pos1 — TKR1 (cap €218.163)',pool:218163,deelbaar:p1,ontvangers:[{naam:'Topkapi Rights I',bedrag:p1,note:'100%'}]},
+      {naam:'Pos2 — NFF 64% & CoBO 36%',deelbaar:r1,
+        ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p2_nff,note:'64% (bruto)'},{naam:'Nederlands Film Fonds',bedrag:-nff_ret,note:'−50% NFF retour → partijen'},{naam:'CoBO-Fonds',bedrag:p2_cobo,note:'36%'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+      {naam:'NFF retour — verdeling',deelbaar:nff_ret,ontvangers:[
+        {naam:'Topkapi Rights I',bedrag:ret_tkr,note:'86%'},
+        {naam:'Kees van Beijnum (scenario)',bedrag:ret_kees,note:'2%'},
+        {naam:'BV Evenblij / Maarten Treurniet (scenario)',bedrag:ret_scen,note:'2%'},
+        {naam:'BV Evenblij / Maarten Treurniet (regie)',bedrag:ret_regie,note:'10%'},
+      ].filter(o=>Math.abs(o.bedrag)>=0.005)}
+    ],
+    totalen_K:{'Topkapi Rights I':p1+ret_tkr,'Stichting Nederlands Fonds voor de Film':p2_nff,
+      'Nederlands Film Fonds':-nff_ret,'CoBO-Fonds':p2_cobo,
+      'Kees van Beijnum (scenario)':ret_kees,
+      'BV Evenblij / Maarten Treurniet (scenario)':ret_scen,
+      'BV Evenblij / Maarten Treurniet (regie)':ret_regie}
+  };
+}
+
+// HET ECHTE LEVEN — pos1 NFF 50% cap 17.500 + TKR1 25% cap 17.500 + RJW 25%;
+//                   makers regie 5% + scenario 7% van TKR1-deel; pos2 TKR1 cap 55.332; pos3 NFF 70% + TKR1 30%
+function waterval_echte_leven(n) {
+  const p1=Math.min(n,35000); const r1=n-p1;
+  const p1_nff=p1*0.50, p1_tkr_b=p1*0.25, p1_rjw=p1*0.25;
+  const rjw_r=p1_tkr_b*0.05, rjw_s=p1_tkr_b*0.07, p1_tkr=p1_tkr_b-rjw_r-rjw_s;
+  const p2=Math.min(r1,55332); const r2=r1-p2;
+  const p3_nff=r2*0.70, p3_tkr=r2*0.30;
+  return {
+    posities:[
+      {naam:'Pos1 — NFF 50%, TKR1 25%, RJW 25% (cap €35.000)',pool:35000,deelbaar:p1,
+        ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p1_nff,note:'50%'},{naam:'Topkapi Rights I',bedrag:p1_tkr,note:'25% − makers'},{naam:'Grote Broer Filmwerken (RJW regie)',bedrag:rjw_r,note:'5% van TKR1-deel'},{naam:'Grote Broer Filmwerken (RJW scenario)',bedrag:rjw_s,note:'7% van TKR1-deel'},{naam:'Robert-Jan Westdijk (eigen aandeel)',bedrag:p1_rjw,note:'25%'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+      {naam:'Pos2 — TKR1 (cap €55.332)',pool:55332,deelbaar:p2,ontvangers:[{naam:'Topkapi Rights I',bedrag:p2,note:'100%'}]},
+      {naam:'Pos3 — NFF 70% & TKR1 30%',deelbaar:r2,
+        ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p3_nff,note:'70%'},{naam:'Topkapi Rights I',bedrag:p3_tkr,note:'30%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+    ],
+    totalen_K:{'Stichting Nederlands Fonds voor de Film':p1_nff+p3_nff,'Topkapi Rights I':p1_tkr+p2+p3_tkr,
+      'Grote Broer Filmwerken':rjw_r+rjw_s,'Robert-Jan Westdijk (eigen aandeel)':p1_rjw}
+  };
+}
+
+// EILANDGASTEN — 30% kosten; 1/3 CoBO + 1/3 KRO-NCRV + 1/3 TKR1; makers 10% van TKR1
+function waterval_eilandgasten(n) {
+  const cobo=n/3, kro=n/3, tkr_b=n/3;
+  const meer=tkr_b*0.05, traida=tkr_b*0.05, tkr=tkr_b-meer-traida;
+  return {
+    posities:[{naam:'Eerste positie — 1/3 CoBO, 1/3 KRO-NCRV, 1/3 TKR1',deelbaar:n,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:cobo,note:'33,33%'},{naam:'KRO-NCRV',bedrag:kro,note:'33,33%'},{naam:'Topkapi Rights I',bedrag:tkr,note:'33,33% − makers'},{naam:'Y. van der Meer',bedrag:meer,note:'5%'},{naam:'K. Traïda',bedrag:traida,note:'5%'}]}],
+    totalen_K:{'CoBO-Fonds':cobo,'KRO-NCRV':kro,'Topkapi Rights I':tkr,'Y. van der Meer':meer,'K. Traïda':traida}
+  };
+}
+
+// ESCORT — 30% kosten; pos1 NFF cap 18.150; pos2 1/3 CoBO + 1/3 BNNVARA + 1/3 TKR1; makers 7,5%
+function waterval_escort(n) {
+  const p1=Math.min(n,18150); const r1=n-p1;
+  const cobo=r1/3, bnnvara=r1/3, tkr_b=r1/3;
+  const ketelaar=tkr_b*0.075, tkr=tkr_b-ketelaar;
+  return {
+    posities:[
+      {naam:'Pos1 — NFF (cap €18.150)',pool:18150,deelbaar:p1,ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p1,note:'100%'}]},
+      {naam:'Pos2 — 1/3 CoBO, 1/3 BNNVARA, 1/3 TKR1',deelbaar:r1,
+        ontvangers:[{naam:'CoBO-Fonds',bedrag:cobo,note:'33,33%'},{naam:'BNNVARA',bedrag:bnnvara,note:'33,33%'},{naam:'Topkapi Rights I',bedrag:tkr,note:'33,33% − 7,5%'},{naam:'Frank Ketelaar BV (scenario)',bedrag:ketelaar,note:'7,5% van TKR1-deel'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+    ],
+    totalen_K:{'Stichting Nederlands Fonds voor de Film':p1,'CoBO-Fonds':cobo,'BNNVARA':bnnvara,'Topkapi Rights I':tkr,'Frank Ketelaar BV (scenario)':ketelaar}
+  };
+}
+
+// FAMILIE — pos1 NFF 92,34% + TKR1 7,66% (50% pot, cap 59.264); pos2 1/3 CoBO + 1/3 NTR + 1/3 TKR1; makers 17% van TKR1 pos2
+function waterval_familie(n) {
+  const CAP1=59264; const p1=Math.min(n*0.50,CAP1); const r1=n-p1;
+  const p1_nff=p1*0.9234273758, p1_tkr=p1*0.0765726242;
+  const cobo=r1/3, ntr=r1/3, tkr_b=r1/3;
+  const wsb=tkr_b*0.05, blok=tkr_b*0.02, vlugt=tkr_b*0.02, klever=tkr_b*0.02, lasseur=tkr_b*0.02, rietman=tkr_b*0.02, eyle=tkr_b*0.02;
+  const tkr=tkr_b-wsb-blok-vlugt-klever-lasseur-rietman-eyle;
+  return {
+    posities:[
+      {naam:'Pos1 — NFF 92,34% & TKR1 7,66% (50% van inkomsten, cap €59.264)',pool:CAP1,deelbaar:p1,
+        ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p1_nff,note:'92,34%'},{naam:'Topkapi Rights I',bedrag:p1_tkr,note:'7,66%'}]},
+      {naam:'Pos2 — 1/3 CoBO, 1/3 NTR, 1/3 TKR1',deelbaar:r1,
+        ontvangers:[{naam:'CoBO-Fonds',bedrag:cobo,note:'33,33%'},{naam:'NTR (voorheen NPS)',bedrag:ntr,note:'33,33%'},{naam:'Topkapi Rights I',bedrag:tkr,note:'33,33% − makers'},{naam:'W.H. van de Sande Bakhuyzen',bedrag:wsb,note:'5%'},{naam:'A. Blok',bedrag:blok,note:'2%'},{naam:'Vlugt',bedrag:vlugt,note:'2%'},{naam:'Klever',bedrag:klever,note:'2%'},{naam:'Lasseur',bedrag:lasseur,note:'2%'},{naam:'Rietman',bedrag:rietman,note:'2%'},{naam:'M. Van Eyle',bedrag:eyle,note:'2%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+    ],
+    totalen_K:{'Stichting Nederlands Fonds voor de Film':p1_nff,'CoBO-Fonds':cobo,'NTR (voorheen NPS)':ntr,
+      'Topkapi Rights I':p1_tkr+tkr,'W.H. van de Sande Bakhuyzen':wsb,'A. Blok':blok,'Vlugt':vlugt,'Klever':klever,'Lasseur':lasseur,'Rietman':rietman,'M. Van Eyle':eyle}
+  };
+}
+
+// FIRST MISSION — TKR1 100%
+function waterval_first_mission(n) {
+  return {posities:[{naam:'Eerste positie',deelbaar:n,ontvangers:[{naam:'Topkapi Rights I',bedrag:n,note:'100%'}]}],totalen_K:{'Topkapi Rights I':n}};
+}
+
+// DE FUIK — 30% kosten; 1/3 CoBO + 1/3 VPRO + 1/3 TKR1; Mischa Kamp 5% van TKR1
+function waterval_fuik(n) {
+  const cobo=n/3, vpro=n/3, tkr_b=n/3, kamp=tkr_b*0.05, tkr=tkr_b-kamp;
+  return {
+    posities:[{naam:'Eerste positie — 1/3 CoBO, 1/3 VPRO, 1/3 TKR1',deelbaar:n,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:cobo,note:'33,33%'},{naam:'VPRO Omroepvereniging',bedrag:vpro,note:'33,33%'},{naam:'Topkapi Rights I',bedrag:tkr,note:'33,33% − 5%'},{naam:'Mischa Kamp',bedrag:kamp,note:'5% regie'}]}],
+    totalen_K:{'CoBO-Fonds':cobo,'VPRO Omroepvereniging':vpro,'Topkapi Rights I':tkr,'Mischa Kamp':kamp}
+  };
+}
+
+// HET GEHEIM — TKR1 67%, De Finales 24%, Frank Ketelaar 9%
+function waterval_geheim(n) {
+  return {posities:[{naam:'Eerste positie',deelbaar:n,
+    ontvangers:[{naam:'Topkapi Rights I',bedrag:n*0.67,note:'67%'},{naam:'De Finales B.V.',bedrag:n*0.24,note:'24%'},{naam:'Frank Ketelaar BV',bedrag:n*0.09,note:'9%'}]}],
+    totalen_K:{'Topkapi Rights I':n*0.67,'De Finales B.V.':n*0.24,'Frank Ketelaar BV':n*0.09}
+  };
+}
+
+// DE HELAASHEID DER DINGEN — pos1 TKR1 investering cap 75k; pos2 NFF 70% + TKR1 30%
+function waterval_helaasheid(n) {
+  const p1=Math.min(n,75000); const r1=n-p1;
+  return {posities:[
+    {naam:'Pos1 — Topkapi investering (cap €75.000)',pool:75000,deelbaar:p1,ontvangers:[{naam:'Topkapi investering',bedrag:p1,note:'100%'}]},
+    {naam:'Pos2 — NFF 70% & TKR1 30%',deelbaar:r1,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:r1*0.70,note:'70%'},{naam:'Topkapi Rights I',bedrag:r1*0.30,note:'30%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi investering':p1,'Stichting Nederlands Fonds voor de Film':r1*0.70,'Topkapi Rights I':r1*0.30}};
+}
+
+// HITTE HARARA — 30% kosten conform contract; pos1 TKR1 cap €39.254; pos2 1/3 CoBO+NTR+TKR1; makers: Rosan Dieho 5%, Lodewijk Crijns 6,5%
+function waterval_hitte(n) {
+  const p1=Math.min(n,39254); const r1=n-p1;
+  const cobo=r1/3, ntr=r1/3, tkr_b=r1/3;
+  const dieho=tkr_b*0.05, crijns=tkr_b*0.065, tkr=tkr_b-dieho-crijns;
+  return {posities:[
+    {naam:'Pos1 — TKR1 investering (cap €39.254)',pool:39254,deelbaar:p1,ontvangers:[{naam:'Topkapi Rights I',bedrag:p1,note:'100%'}]},
+    {naam:'Pos2 — 1/3 CoBO, 1/3 NTR, 1/3 TKR1',deelbaar:r1,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:cobo,note:'33,33%'},{naam:'NTR (voorheen NPS)',bedrag:ntr,note:'33,33%'},{naam:'Topkapi Rights I',bedrag:tkr,note:'33,33% − makers'},{naam:'Rosan Dieho (scenario)',bedrag:dieho,note:'5%'},{naam:'Lodewijk Crijns (regie)',bedrag:crijns,note:'6,5%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1+tkr,'CoBO-Fonds':cobo,'NTR (voorheen NPS)':ntr,'Rosan Dieho (scenario)':dieho,'Lodewijk Crijns (regie)':crijns}};
+}
+
+// 1000 ARMEN — pos1 Tartwijk 48,41% + TKR1 51,59% (cap €291.647); pos2 TKR1 cap €140k
+function waterval_armen(n) {
+  const P_TART=0.4841366446423245, P_TKR=0.5158633553576756, CAP1=291647;
+  const p1=Math.min(n,CAP1); const r1=n-p1;
+  const p2=Math.min(r1,140000); const r2=r1-p2;
+  return {posities:[
+    {naam:'Pos1 — Tartwijk & TKR1 (cap €291.647)',pool:CAP1,deelbaar:p1,
+      ontvangers:[{naam:'Tartwijk podium',bedrag:p1*P_TART,note:'48,41%'},{naam:'Topkapi Rights I',bedrag:p1*P_TKR,note:'51,59%'}]},
+    {naam:'Pos2 — TKR1 (cap €140.000)',pool:140000,deelbaar:p2,ontvangers:[{naam:'Topkapi Rights I',bedrag:p2,note:'100%'}]},
+    {naam:'Verdere posities',deelbaar:r2,ontvangers:[{naam:'Verdere verdeling',bedrag:r2,note:'zie schema'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Tartwijk podium':p1*P_TART,'Topkapi Rights I':p1*P_TKR+p2}};
+}
+
+// IN ORANJE — pos1 TKR1 100% cap €140k; pos2 CoBO 54,72% + TKR1 36,48%
+function waterval_in_oranje(n) {
+  const p1=Math.min(n,140000); const r1=n-p1;
+  return {posities:[
+    {naam:'Pos1 — TKR1 investering (cap €140.000)',pool:140000,deelbaar:p1,ontvangers:[{naam:'Topkapi Rights I',bedrag:p1,note:'100%'}]},
+    {naam:'Pos2 — CoBO 54,72% & TKR1 36,48%',deelbaar:r1,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:r1*0.5472,note:'54,72%'},{naam:'Topkapi Rights I',bedrag:r1*0.3648,note:'36,48%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1+r1*0.3648,'CoBO-Fonds':r1*0.5472}};
+}
+
+// ISABELLE — pos1 TKR1 100% cap €40.000; pos2 NFF 65% + CoBO 35% (cap 258k+162k)
+function waterval_isabelle(n) {
+  const p1=Math.min(n,40000); const r1=n-p1;
+  const p2_nff=Math.min(r1*0.65,258228), p2_cobo=Math.min(r1*0.35,162498);
+  return {posities:[
+    {naam:'Pos1 — TKR1 (cap €40.000)',pool:40000,deelbaar:p1,ontvangers:[{naam:'Topkapi Rights I',bedrag:p1,note:'100%'}]},
+    {naam:'Pos2 — NFF 65% & CoBO 35%',deelbaar:r1,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p2_nff,note:'65% cap €258.228'},{naam:'CoBO-Fonds',bedrag:p2_cobo,note:'35% cap €162.498'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1,'Stichting Nederlands Fonds voor de Film':p2_nff,'CoBO-Fonds':p2_cobo}};
+}
+
+// JACKIE — volledig schema; pos1 TKR1 cap €35.391; pos2 CoBO 50% cap €34.034 + TKR1 50% (Fow 5%); pos3 NFF 70% + TKR1 30%; pos4 CoBO 10% + TKR1 90%
+function waterval_jackie(n) {
+  const p1=Math.min(n,35391); const r1=n-p1;
+  const p2_cobo=Math.min(r1*0.50,34034), p2_tkr_b=Math.min(r1*0.50,34034);
+  const fow2=p2_tkr_b*0.05, p2_tkr=p2_tkr_b-fow2; const r2=r1-p2_cobo-p2_tkr_b;
+  const p3_nff=r2*0.70, p3_tkr_b=r2*0.30; const fow3=p3_tkr_b*0.05, p3_tkr=p3_tkr_b-fow3;
+  const r3=r2-p3_nff-p3_tkr_b;
+  const p4_cobo=r3*0.10, p4_tkr_b=r3*0.90; const fow4=p4_tkr_b*0.05, p4_tkr=p4_tkr_b-fow4;
+  return {posities:[
+    {naam:'Pos1 — TKR1 (cap €35.391)',pool:35391,deelbaar:p1,ontvangers:[{naam:'Topkapi Rights I',bedrag:p1,note:'100%'}]},
+    {naam:'Pos2 — CoBO 50% & TKR1 50% (cap €34.034 elk)',pool:68068,deelbaar:p2_cobo+p2_tkr_b,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:p2_cobo,note:'50%'},{naam:'Topkapi Rights I',bedrag:p2_tkr,note:'50% − Fow 5%'},{naam:'Fow Pyng Hu (regie)',bedrag:fow2,note:'5%'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+    {naam:'Pos3 — NFF 70% & TKR1 30%',deelbaar:r2,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p3_nff,note:'70%'},{naam:'Topkapi Rights I',bedrag:p3_tkr,note:'30% − Fow 5%'},{naam:'Fow Pyng Hu (regie)',bedrag:fow3,note:'5%'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+    {naam:'Pos4 — CoBO 10% & TKR1 90%',deelbaar:r3,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:p4_cobo,note:'10%'},{naam:'Topkapi Rights I',bedrag:p4_tkr,note:'90% − Fow 5%'},{naam:'Fow Pyng Hu (regie)',bedrag:fow4,note:'5%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1+p2_tkr+p3_tkr+p4_tkr,'CoBO-Fonds':p2_cobo+p4_cobo,
+    'Stichting Nederlands Fonds voor de Film':p3_nff,'Fow Pyng Hu (regie)':fow2+fow3+fow4}};
+}
+
+// JOY — pos1 NFF 50% + TKR1 50% cap 15k elk; pos2 TKR1 cap 19.268; pos3 CoBO+TKR1 50/50 cap 132.933; pos4 NFF/CoBO/Med 70% + TKR1 30%
+function waterval_joy(n) {
+  const p1=Math.min(n,30000); const r1=n-p1;
+  const p2=Math.min(r1,19268); const r2=r1-p2;
+  const p3=Math.min(r2,132933*2); const r3=r2-p3;
+  const p4_tkr=r3*0.30, p4_nff=r3*0.5517255343, p4_cobo=r3*0.0672872314, p4_med=r3*0.0809872344;
+  return {posities:[
+    {naam:'Pos1 — NFF 50% & TKR1 50% (cap €30.000)',pool:30000,deelbaar:p1,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p1/2,note:'50%'},{naam:'Topkapi Rights I',bedrag:p1/2,note:'50%'}]},
+    {naam:'Pos2 — TKR1 investering (cap €19.268)',pool:19268,deelbaar:p2,ontvangers:[{naam:'Topkapi Rights I',bedrag:p2,note:'100%'}]},
+    {naam:'Pos3 — CoBO 50% & TKR1 50% (cap €265.866)',pool:265866,deelbaar:p3,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:p3/2,note:'50%'},{naam:'Topkapi Rights I',bedrag:p3/2,note:'50%'}]},
+    {naam:'Pos4 — NFF/CoBO/Mediafonds 70% & TKR1 30%',deelbaar:r3,
+      ontvangers:[{naam:'Topkapi Rights I',bedrag:p4_tkr,note:'30%'},{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p4_nff,note:'55,17%'},{naam:'CoBO-Fonds',bedrag:p4_cobo,note:'6,73%'},{naam:'Mediafonds',bedrag:p4_med,note:'8,10%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1/2+p2+p3/2+p4_tkr,'Stichting Nederlands Fonds voor de Film':p1/2+p4_nff,'CoBO-Fonds':p3/2+p4_cobo,'Mediafonds':p4_med}};
+}
+
+// JULIA'S HART — 30% kosten; 1/3 CoBO + 1/3 VPRO + 1/3 TKR1
+function waterval_julias_hart(n) {
+  const cobo=n/3, vpro=n/3, tkr=n/3;
+  return {posities:[{naam:'Eerste positie — 1/3 CoBO, 1/3 VPRO, 1/3 TKR1',deelbaar:n,
+    ontvangers:[{naam:'CoBO-Fonds',bedrag:cobo,note:'33,33%'},{naam:'VPRO Omroepvereniging',bedrag:vpro,note:'33,33%'},{naam:'Topkapi Rights I',bedrag:tkr,note:'33,33%'}]}],
+    totalen_K:{'CoBO-Fonds':cobo,'VPRO Omroepvereniging':vpro,'Topkapi Rights I':tkr}
+  };
+}
+
+// LANGER LICHT — pos1 NFF+TKR1 50/50 cap 45k; pos2 TKR1 cap 50k; pos3 VPRO cap 52.298; pos4 CoBO cap 265.168; pos5 NFF+Stifo
+function waterval_langer_licht(n) {
+  const p1=Math.min(n,45000); const r1=n-p1;
+  const p2=Math.min(r1,50000); const r2=r1-p2;
+  const p3=Math.min(r2,52298); const r3=r2-p3;
+  const p4=Math.min(r3,265168); const r4=r3-p4;
+  return {posities:[
+    {naam:'Pos1 — NFF & TKR1 50/50 (cap €45.000)',pool:45000,deelbaar:p1,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p1/2,note:'50%'},{naam:'Topkapi Rights I',bedrag:p1/2,note:'50%'}]},
+    {naam:'Pos2 — TKR1 (cap €50.000)',pool:50000,deelbaar:p2,ontvangers:[{naam:'Topkapi Rights I',bedrag:p2,note:'100%'}]},
+    {naam:'Pos3 — VPRO (cap €52.298)',pool:52298,deelbaar:p3,ontvangers:[{naam:'VPRO Omroepvereniging',bedrag:p3,note:'100%'}]},
+    {naam:'Pos4 — CoBO (cap €265.168)',pool:265168,deelbaar:p4,ontvangers:[{naam:'CoBO-Fonds',bedrag:p4,note:'100%'}]},
+    {naam:'Pos5 — NFF & Stifo',deelbaar:r4,ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:r4*0.6320,note:'63,20%'},{naam:'Stifo Fonds',bedrag:r4*0.3680,note:'36,80%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1/2+p2,'Stichting Nederlands Fonds voor de Film':p1/2+r4*0.6320,'VPRO Omroepvereniging':p3,'CoBO-Fonds':p4,'Stifo Fonds':r4*0.3680}};
+}
+
+// LAYLA FOURIE — TKR1 + Eurimages (uit K-kolom)
+function waterval_layla_fourie(n) {
+  const eur_pct=585.684/3774.64, eur=n*eur_pct, tkr=n-eur;
+  return {posities:[{naam:'Eerste positie',deelbaar:n,ontvangers:[{naam:'Topkapi Rights I',bedrag:tkr,note:'84,48%'},{naam:"Conseil de l'Europe",bedrag:eur,note:'15,52%'}]}],
+    totalen_K:{'Topkapi Rights I':tkr,"Conseil de l'Europe":eur}};
+}
+
+// LOVERBOY — 30% kosten; pos1 RFF 6%; pos2 1/3 CoBO + 1/3 KRO-NCRV + 1/3 TKR1; makers 20% van TKR1
+function waterval_loverboy(n) {
+  const rff=n*0.06; const rest=n-rff;
+  const cobo=rest/3, kro=rest/3, tkr_b=rest/3;
+  const epsk=tkr_b*0.10, crijns=tkr_b*0.10, tkr=tkr_b-epsk-crijns;
+  return {posities:[
+    {naam:'Pos1 — Rotterdams Filmfonds (6%)',deelbaar:rff,ontvangers:[{naam:'Rotterdams Filmfonds',bedrag:rff,note:'6%'}]},
+    {naam:'Pos2 — 1/3 CoBO, 1/3 KRO-NCRV, 1/3 TKR1',deelbaar:rest,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:cobo,note:'33,33%'},{naam:'KRO-NCRV',bedrag:kro,note:'33,33%'},{naam:'Topkapi Rights I',bedrag:tkr,note:'33,33% − makers'},{naam:'Jacqueline Epskamp (scenario)',bedrag:epsk,note:'10%'},{naam:'Lodewijk Crijns (regie)',bedrag:crijns,note:'10%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Rotterdams Filmfonds':rff,'CoBO-Fonds':cobo,'KRO-NCRV':kro,'Topkapi Rights I':tkr,'Jacqueline Epskamp (scenario)':epsk,'Lodewijk Crijns (regie)':crijns}};
+}
+
+// MET GROTE BLIJDSCHAP — pos1 TKR1 100% cap €11.586; pos2 NFF+VPRO
+function waterval_blijdschap(n) {
+  const p1=Math.min(n,11586); const r1=n-p1;
+  const p2_nff=r1*0.4609681568, p2_vpro=r1*0.5390318432;
+  return {posities:[
+    {naam:'Pos1 — TKR1 investering (cap €11.586)',pool:11586,deelbaar:p1,ontvangers:[{naam:'Topkapi Rights I',bedrag:p1,note:'100%'}]},
+    {naam:'Pos2 — NFF 46,10% & VPRO 53,90%',deelbaar:r1,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p2_nff,note:'46,10% cap €56.269'},{naam:'VPRO Omroepvereniging',bedrag:p2_vpro,note:'53,90% cap €65.798'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1,'Stichting Nederlands Fonds voor de Film':p2_nff,'VPRO Omroepvereniging':p2_vpro}};
+}
+
+// MONTE CARLO — negatief saldo, TKR1 100%
+function waterval_monte_carlo(n) { return {posities:[{naam:'Eerste positie',deelbaar:n,ontvangers:[{naam:'Topkapi Rights I',bedrag:n,note:'100%'}]}],totalen_K:{'Topkapi Rights I':n}}; }
+
+// MY QUEEN KARO — pos0 Eurimages 13,92%; pos1 TKR1 cap €33.000; pos2 CoBO cap €158.856
+function waterval_my_queen(n) {
+  const eur=n*0.1392, rest=n-eur;
+  const p1=Math.min(rest,33000); const r1=rest-p1;
+  const p2=Math.min(r1,158856); const r2=r1-p2;
+  return {posities:[
+    {naam:'Eurimages & TKR1 (cap €33.000)',deelbaar:n,ontvangers:[{naam:"Conseil de l'Europe",bedrag:eur,note:'13,92%'},{naam:'Topkapi Rights I',bedrag:p1,note:'rest, cap €33.000'}]},
+    {naam:'Pos2 — CoBO (cap €158.856)',pool:158856,deelbaar:p2,ontvangers:[{naam:'CoBO-Fonds',bedrag:p2,note:'100%'}]},
+    {naam:'Verdere posities',deelbaar:r2,ontvangers:[{naam:'Verdere verdeling',bedrag:r2,note:'zie schema'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{"Conseil de l'Europe":eur,'Topkapi Rights I':p1,'CoBO-Fonds':p2}};
+}
+
+// NICK — kosten €2.890,31 inlopen naar TKR1 vóór verdeling
+// pos1 NFF 50% + TKR1 50% cap €17.100; pos2 TKR1 cap €33.950 (Fow 3%); pos3 NFF 58,89%+RFF 11,11%+TKR1 30%
+const NICK_KOSTEN = 2890.31;
+function waterval_nick(n_bruto) {
+  const kosten=Math.min(n_bruto,NICK_KOSTEN);
+  const n=Math.max(0,n_bruto-NICK_KOSTEN);
+  const p1=Math.min(n,17100); const r1=n-p1;
+  const p2=Math.min(r1,33950); const r2=r1-p2;
+  const p3_nff=r2*0.5888792859, p3_rff=r2*0.1111207141, p3_tkr_b=r2*0.30;
+  const fow=p3_tkr_b*0.03, p3_tkr=p3_tkr_b-fow;
+  return {posities:[
+    {naam:'Kosten project (inlopen naar TKR1)',deelbaar:kosten,ontvangers:[{naam:'Topkapi Rights I',bedrag:kosten,note:'kosten €2.890,31'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+    {naam:'Pos1 — NFF 50% & TKR1 50% (cap €17.100)',pool:17100,deelbaar:p1,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p1/2,note:'50%'},{naam:'Topkapi Rights I',bedrag:p1/2,note:'50%'}]},
+    {naam:'Pos2 — TKR1 (cap €33.950)',pool:33950,deelbaar:p2,ontvangers:[{naam:'Topkapi Rights I',bedrag:p2,note:'100%'}]},
+    {naam:'Pos3 — NFF 58,89%, RFF 11,11%, TKR1 30%',deelbaar:r2,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p3_nff,note:'58,89%'},{naam:'Rotterdams Filmfonds',bedrag:p3_rff,note:'11,11%'},{naam:'Topkapi Rights I',bedrag:p3_tkr,note:'30% − 3%'},{naam:'Fow Pyng Hu',bedrag:fow,note:'3% van TKR1-deel'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':kosten+p1/2+p2+p3_tkr,'Stichting Nederlands Fonds voor de Film':p1/2+p3_nff,'Rotterdams Filmfonds':p3_rff,'Fow Pyng Hu':fow}};
+}
+
+// PARADISE GIRLS — volledig schema; pos1 TKR1 68,57% cap €24.000 + Pandora 31,43% cap €11.000; pos2 NTR 84% cap €30.000 + Eur 16% cap €5.714; pos3 CoBO 42% + prod 30,84% (Fow 5%) + NRW 11,16% + Eur 16%
+function waterval_paradise(n) {
+  const p1_tkr=Math.min(n*0.6857142857,24000), p1_pan=Math.min(n*0.3142857143,11000);
+  const p1=p1_tkr+p1_pan; const r1=n-p1;
+  const p2_ntr=Math.min(r1*0.8400067201,30000), p2_eur=Math.min(r1*0.1599932799,5714);
+  const p2=p2_ntr+p2_eur; const r2=r1-p2;
+  const p3_cobo=r2*0.41999944, p3_prod_b=r2*0.30840035, p3_nrw=r2*0.11159909, p3_eur3=r2*0.16000111;
+  const fow=p3_prod_b*0.05, p3_prod=p3_prod_b-fow;
+  return {posities:[
+    {naam:'Pos1 — TKR1 68,57% & Pandora 31,43% (cap €35.000)',pool:35000,deelbaar:p1,
+      ontvangers:[{naam:'Topkapi Rights I',bedrag:p1_tkr,note:'68,57% cap €24.000'},{naam:'Pandora Filmproduktions GmbH',bedrag:p1_pan,note:'31,43% cap €11.000'}]},
+    {naam:'Pos2 — NTR 84% & Eurimages 16% (cap €35.714)',pool:35714,deelbaar:p2,
+      ontvangers:[{naam:'NTR (voorheen NPS)',bedrag:p2_ntr,note:'84% cap €30.000'},{naam:"Conseil de l'Europe",bedrag:p2_eur,note:'16% cap €5.714'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+    {naam:'Pos3 — CoBO 42%, Producent 30,84% (Fow 5%), NRW 11,16%, Eurimages 16%',deelbaar:r2,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:p3_cobo,note:'42%'},{naam:'Topkapi Rights I (producent)',bedrag:p3_prod,note:'30,84% − Fow'},{naam:'Fow Pyng Hu',bedrag:fow,note:'5% van producentdeel'},{naam:'NRW Filmstiftung',bedrag:p3_nrw,note:'11,16%'},{naam:"Conseil de l'Europe (pos3)",bedrag:p3_eur3,note:'16%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1_tkr+p3_prod,'Pandora Filmproduktions GmbH':p1_pan,'NTR (voorheen NPS)':p2_ntr,
+    "Conseil de l'Europe":p2_eur+p3_eur3,'CoBO-Fonds':p3_cobo,'Fow Pyng Hu':fow,'NRW Filmstiftung':p3_nrw}};
+}
+
+// PHILEINE ZEGT SORRY — makers 13% (RJW auteur 5% + regie 8%); TKR1 75% + Fu Works 25% van rest
+function waterval_phileine(n) {
+  const rjw_a=n*0.05, rjw_r=n*0.08, rest=n-rjw_a-rjw_r;
+  const tkr=rest*0.75, fu=rest*0.25;
+  return {posities:[{naam:'Eerste positie',deelbaar:n,
+    ontvangers:[{naam:'Topkapi Rights I',bedrag:tkr,note:'75% van rest'},{naam:'Fu Works Productions B.V.',bedrag:fu,note:'25% van rest'},{naam:'Grote Broer Filmwerken (RJW regie)',bedrag:rjw_r,note:'8%'},{naam:'Grote Broer Filmwerken (RJW auteur)',bedrag:rjw_a,note:'5%'}]}],
+    totalen_K:{'Topkapi Rights I':tkr,'Fu Works Productions B.V.':fu,'Grote Broer Filmwerken':rjw_r+rjw_a}};
+}
+
+// DE POOLSE BRUID — pos3 CoBO 50% + TKR1 25% + IJswater 25%; Karim 22,2% van TKR1
+function waterval_poolse_bruid(n) {
+  const cobo=n*0.50, tkr_b=n*0.25, ijs=n*0.25;
+  const karim=tkr_b*(225.81/1016.16), tkr=tkr_b-karim;
+  return {posities:[{naam:'Derde positie — CoBO 50%, TKR1 25%, IJswater 25%',deelbaar:n,
+    ontvangers:[{naam:'CoBO-Fonds',bedrag:cobo,note:'50%'},{naam:'Topkapi Rights I',bedrag:tkr,note:'25% − Karim'},{naam:'IJswater Films B.V.',bedrag:ijs,note:'25%'},{naam:'K. Traïda',bedrag:karim,note:'22,2% van TKR1-deel'}]}],
+    totalen_K:{'CoBO-Fonds':cobo,'Topkapi Rights I':tkr,'IJswater Films B.V.':ijs,'K. Traïda':karim}};
+}
+
+// R U THERE — pos1 NFF 50% + TKR1 50% cap €15.375 elk; pos2 TKR1 cap €13.700; pos3 CoBO+TKR1 50/50 cap €119.009; pos4 NFF+Med+CoBO 70%+TKR1 30% (Rogier 5%)
+function waterval_ru_there(n) {
+  const p1=Math.min(n,30750); const r1=n-p1;
+  const p1_nff=p1/2, p1_tkr=p1/2;
+  const p2=Math.min(r1,13700); const r2=r1-p2;
+  const p3=Math.min(r2,238018); const r3=r2-p3;
+  const p3_cobo=p3/2, p3_tkr_b=p3/2, rogier3=p3_tkr_b*0.05, p3_tkr=p3_tkr_b-rogier3;
+  const p4_tkr_b=r3*0.30, rogier4=p4_tkr_b*0.05, p4_tkr=p4_tkr_b-rogier4;
+  const p4_nff=r3*0.41370832, p4_med=r3*0.22064444, p4_cobo=r3*0.06564724;
+  return {posities:[
+    {naam:'Pos1 — NFF & TKR1 50/50 (cap €15.375 elk)',pool:30750,deelbaar:p1,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p1_nff,note:'50% cap €15.375'},{naam:'Topkapi Rights I',bedrag:p1_tkr,note:'50% cap €15.375'}]},
+    {naam:'Pos2 — TKR1 (cap €13.700)',pool:13700,deelbaar:p2,ontvangers:[{naam:'Topkapi Rights I',bedrag:p2,note:'100%'}]},
+    {naam:'Pos3 — CoBO & TKR1 50/50 (cap €119.009 elk)',pool:238018,deelbaar:p3,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:p3_cobo,note:'50%'},{naam:'Topkapi Rights I',bedrag:p3_tkr,note:'50% − Rogier 5%'},{naam:'Rogier de Blok (scenario)',bedrag:rogier3,note:'5%'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+    {naam:'Pos4 — NFF+Med+CoBO 70% & TKR1 30%',deelbaar:r3,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p4_nff,note:'41,37%'},{naam:'Mediafonds',bedrag:p4_med,note:'22,06%'},{naam:'CoBO-Fonds (extra)',bedrag:p4_cobo,note:'6,56%'},{naam:'Topkapi Rights I',bedrag:p4_tkr,note:'30% − Rogier 5%'},{naam:'Rogier de Blok (scenario)',bedrag:rogier4,note:'5%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1_tkr+p2+p3_tkr+p4_tkr,'Stichting Nederlands Fonds voor de Film':p1_nff+p4_nff,
+    'CoBO-Fonds':p3_cobo+p4_cobo,'Mediafonds':p4_med,'Rogier de Blok (scenario)':rogier3+rogier4}};
+}
+
+// SCHLAFKRANKHEIT — NFF 100%
+function waterval_schlaf(n) {
+  return {posities:[{naam:'Eerste positie',deelbaar:n,ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:n,note:'100%'}]}],totalen_K:{'Stichting Nederlands Fonds voor de Film':n}};
+}
+
+// TEMMINK — pos1 TKR1 cap €2.269; pos2 VPRO cap €57.605; pos3 CoBO+TKR1 50/50 cap €119.117; pos4 NFF+Stifo 70%+TKR1 30%; pos5 CoBO 22%+TKR1 39%
+function waterval_temmink(n) {
+  const p1=Math.min(n,2268.9010804506943); const r1=n-p1;
+  const p2=Math.min(r1,57604.67575134659); const r2=r1-p2;
+  const p3=Math.min(r2,238234); const r3=r2-p3;
+  const p3_cobo=p3/2, p3_tkr=p3/2;
+  const p4_nff=r3*0.4672837779, p4_stifo=r3*0.2327162221, p4_tkr=r3*0.30;
+  const r4=r3-p4_nff-p4_stifo-p4_tkr;
+  const p5_cobo=r4*0.22, p5_tkr=r4*0.39;
+  return {posities:[
+    {naam:'Pos1 — TKR1 (cap €2.269)',pool:2269,deelbaar:p1,ontvangers:[{naam:'Topkapi Rights I',bedrag:p1,note:'100%'}]},
+    {naam:'Pos2 — VPRO (cap €57.605)',pool:57605,deelbaar:p2,ontvangers:[{naam:'VPRO Omroepvereniging',bedrag:p2,note:'100%'}]},
+    {naam:'Pos3 — CoBO & TKR1 50/50 (cap €119.117 elk)',pool:238234,deelbaar:p3,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:p3_cobo,note:'50%'},{naam:'Topkapi Rights I',bedrag:p3_tkr,note:'50%'}]},
+    {naam:'Pos4 — NFF 46,73% + Stifo 23,27% + TKR1 30%',deelbaar:r3,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p4_nff,note:'46,73%'},{naam:'Stifo Fonds',bedrag:p4_stifo,note:'23,27%'},{naam:'Topkapi Rights I',bedrag:p4_tkr,note:'30%'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+    {naam:'Pos5 — CoBO 22% & TKR1 39%',deelbaar:r4,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:p5_cobo,note:'22%'},{naam:'Topkapi Rights I',bedrag:p5_tkr,note:'39%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1+p3_tkr+p4_tkr+p5_tkr,'VPRO Omroepvereniging':p2,
+    'CoBO-Fonds':p3_cobo+p5_cobo,'Stichting Nederlands Fonds voor de Film':p4_nff,'Stifo Fonds':p4_stifo}};
+}
+
+// TIRAMISU — pos1 NFF 50% + TKR1 50% (cap 12.500 elk); pos2 cast/crew + TKR1; pos3 CoBO + TKR1
+function waterval_tiramisu(n) {
+  const p1=Math.min(n,25000); const r1=n-p1;
+  const p2_cast=Math.min(r1*0.9573438182,370830), p2_tkr=Math.min(r1*0.0426561818,16523);
+  const r2=r1-p2_cast-p2_tkr;
+  const p3_cobo=Math.min(r2*0.50,104584), p3_tkr=Math.min(r2*0.50,104584);
+  return {posities:[
+    {naam:'Pos1 — NFF & TKR1 50/50 (cap €25.000)',pool:25000,deelbaar:p1,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p1/2,note:'50%'},{naam:'Topkapi Rights I',bedrag:p1/2,note:'50%'}]},
+    {naam:'Pos2 — cast/crew deferments & TKR1',deelbaar:r1,
+      ontvangers:[{naam:'Cast & crew deferments',bedrag:p2_cast,note:'95,73%'},{naam:'Topkapi Rights I',bedrag:p2_tkr,note:'4,27%'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+    {naam:'Pos3 — CoBO 50% & TKR1 50% (cap €209.168)',pool:209168,deelbaar:r2,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:p3_cobo,note:'50%'},{naam:'Topkapi Rights I',bedrag:p3_tkr,note:'50%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Stichting Nederlands Fonds voor de Film':p1/2,'Topkapi Rights I':p1/2+p2_tkr+p3_tkr,'Cast & crew deferments':p2_cast,'CoBO-Fonds':p3_cobo}};
+}
+
+// TRIBUNAL — NFF 70% + TKR1 30%
+function waterval_tribunal(n) {
+  return {posities:[{naam:'Eerste positie',deelbaar:n,ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:n*0.70,note:'70%'},{naam:'Topkapi Rights I',bedrag:n*0.30,note:'30%'}]}],
+    totalen_K:{'Stichting Nederlands Fonds voor de Film':n*0.70,'Topkapi Rights I':n*0.30}};
+}
+
+// TRIP VAN TEETJE — pos1 TKR1 cap €2.269; pos2 CoBO+TKR1 50/50 cap €119.117 (Paula 15%); pos3 NFF 45,45%+Stifo 24,55%+TKR1 30%
+function waterval_teetje(n) {
+  const p1=Math.min(n,2269); const r1=n-p1;
+  const p2=Math.min(r1,238234); const r2=r1-p2;
+  const p2_cobo=p2/2, p2_tkr_b=p2/2, paula=p2_tkr_b*0.15, p2_tkr=p2_tkr_b-paula;
+  const p3_nff=Math.min(r2*0.4545459006,119117), p3_stifo=Math.min(r2*0.2454540994,64323), p3_tkr=Math.min(r2*0.30,119117);
+  return {posities:[
+    {naam:'Pos1 — TKR1 (cap €2.269)',pool:2269,deelbaar:p1,ontvangers:[{naam:'Topkapi Rights I',bedrag:p1,note:'100%'}]},
+    {naam:'Pos2 — CoBO & TKR1 50/50 (cap €119.117 elk)',pool:238234,deelbaar:p2,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:p2_cobo,note:'50%'},{naam:'Topkapi Rights I',bedrag:p2_tkr,note:'50% − Paula 15%'},{naam:'Paula van der Oest (scenario & regie)',bedrag:paula,note:'15%'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+    {naam:'Pos3 — NFF 45,45% + Stifo 24,55% + TKR1 30%',deelbaar:r2,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p3_nff,note:'45,45%'},{naam:'Stifo Fonds',bedrag:p3_stifo,note:'24,55%'},{naam:'Topkapi Rights I',bedrag:p3_tkr,note:'30%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1+p2_tkr+p3_tkr,'CoBO-Fonds':p2_cobo,
+    'Paula van der Oest (scenario & regie)':paula,'Stichting Nederlands Fonds voor de Film':p3_nff,'Stifo Fonds':p3_stifo}};
+}
+
+// DE TWEELING NL: pos1 TKR1+Chios prop. cap €1.452.097; Chios extra 10%; pos2 KRO-NCRV cap €77.355; pos3 CoBO+TKR1 50/50; makers; pos4 fondsen 70%+TKR1 30%
+function waterval_tweeling_nl(n) {
+  const TKR_P1=90756/1452097, CHI_P1=1361341/1452097;
+  const p1_tkr=Math.min(n*TKR_P1,90756), p1_chi=Math.min(n*CHI_P1,1361341);
+  const p1=p1_tkr+p1_chi; const r1=n-p1;
+  const chios_ex=Math.min(r1,136134.1); const r1b=r1-chios_ex;
+  const p2=Math.min(r1b,77355); const r2=r1b-p2;
+  const p3=Math.min(r2,453780); const r3=r2-p3;
+  const p3_cobo=p3/2, p3_tkr_b=p3/2;
+  const som5=p3_tkr_b*0.05,vogel=p3_tkr_b*0.02,reuten=p3_tkr_b*0.02,pol=p3_tkr_b*0.03,arb=p3_tkr_b*0.01;
+  const p3_tkr=p3_tkr_b-som5-vogel-reuten-pol-arb;
+  const p4_fond=Math.min(r3*0.70,1497474), p4_tkr_b=Math.min(r3*0.30,641774.57);
+  const p4_tkr=p4_tkr_b*0.87;
+  return {posities:[
+    {naam:'Pos1 — TKR1 & Chios (prop., cap €1.452.097)',pool:1452097,deelbaar:p1,
+      ontvangers:[{naam:'Topkapi Rights I',bedrag:p1_tkr,note:'6,24%'},{naam:'Chios Media B.V.',bedrag:p1_chi,note:'93,76%'}]},
+    {naam:'Chios extra 10%',pool:136134,deelbaar:chios_ex,ontvangers:[{naam:'Chios Media B.V. (extra 10%)',bedrag:chios_ex,note:'na vol pos1'}]},
+    {naam:'Pos2 — KRO-NCRV (cap €77.355)',pool:77355,deelbaar:p2,ontvangers:[{naam:'KRO-NCRV',bedrag:p2,note:'100%'}]},
+    {naam:'Pos3 — CoBO & TKR1 50/50 (cap €226.890 elk)',pool:453780,deelbaar:p3,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:p3_cobo,note:'50%'},{naam:'Topkapi Rights I',bedrag:p3_tkr,note:'50% − 13% makers'},{naam:'Ben Sombogaart',bedrag:som5,note:'5%'},{naam:'Marieke van der Pol',bedrag:pol,note:'3%'},{naam:'Thekla Reuten',bedrag:reuten,note:'2%'},{naam:'Ellen Vogel',bedrag:vogel,note:'2%'},{naam:'De Arbeiderspers',bedrag:arb,note:'1%'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+    {naam:'Pos4 — Fondsen 70% & TKR1 30%',deelbaar:r3,
+      ontvangers:[{naam:'Fondsen (Stifo/Filmfonds/CoBO/NCRV)',bedrag:p4_fond,note:'70%'},{naam:'Topkapi Rights I',bedrag:p4_tkr,note:'30% − makers'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1_tkr+p3_tkr+p4_tkr,'Chios Media B.V.':p1_chi+chios_ex,
+    'KRO-NCRV':p2,'CoBO-Fonds':p3_cobo,'Fondsen (Stifo/Filmfonds/CoBO/NCRV)':p4_fond,
+    'Ben Sombogaart':som5,'Marieke van der Pol':pol,'Thekla Reuten':reuten,'Ellen Vogel':vogel,'De Arbeiderspers':arb}};
+}
+
+// DE TWEELING ROW: pos1 TKR1+Chios restant van cap €1.452.097; Chios extra 10%; pos2 Samsa 13,07%+TKR1 86,93%
+function waterval_tweeling_row(n) {
+  const TKR_P1=15626.66/250026.77, CHI_P1=234400.11/250026.77;
+  const p1_tkr=Math.min(n*TKR_P1,15626.66), p1_chi=Math.min(n*CHI_P1,234400.11);
+  const p1=p1_tkr+p1_chi; const r1=n-p1;
+  const chios_ex=Math.min(r1,136134.1); const r1b=r1-chios_ex;
+  const p2_samsa=r1b*0.1307, p2_tkr=r1b*0.8693;
+  return {posities:[
+    {naam:'Pos1 — TKR1 & Chios (restant, cap €250.027)',pool:250027,deelbaar:p1,
+      ontvangers:[{naam:'Topkapi Rights I',bedrag:p1_tkr,note:'6,25% restant'},{naam:'Chios Media',bedrag:p1_chi,note:'93,75% restant'}]},
+    {naam:'Chios extra 10%',pool:136134,deelbaar:chios_ex,ontvangers:[{naam:'Chios Media (extra 10%)',bedrag:chios_ex,note:'na vol pos1'}]},
+    {naam:'Pos2 — Samsa 13,07% & TKR1 86,93%',deelbaar:r1b,
+      ontvangers:[{naam:'Samsa Film',bedrag:p2_samsa,note:'13,07%'},{naam:'Topkapi Rights I',bedrag:p2_tkr,note:'86,93%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1_tkr+p2_tkr,'Chios Media':p1_chi+chios_ex,'Samsa Film':p2_samsa}};
+}
+
+// DE UITVERKORENE — 30% kosten; 1/3 CoBO + 1/3 VPRO + 1/3 TKR1; makers 12,5% van TKR1
+function waterval_uitverkorene(n) {
+  const cobo=n/3, vpro=n/3, tkr_b=n/3;
+  const wilmar=tkr_b*0.0375, ketelaar=tkr_b*0.0375, trigorin=tkr_b*0.05, tkr=tkr_b-wilmar-ketelaar-trigorin;
+  return {posities:[{naam:'Eerste positie — 1/3 CoBO, 1/3 VPRO, 1/3 TKR1',deelbaar:n,
+    ontvangers:[{naam:'CoBO-Fonds',bedrag:cobo,note:'33,33%'},{naam:'VPRO Omroepvereniging',bedrag:vpro,note:'33,33%'},{naam:'Topkapi Rights I',bedrag:tkr,note:'33,33% − makers'},{naam:'Wilmar Amsterdam BV (Kees Prins)',bedrag:wilmar,note:'3,75%'},{naam:'Frank Ketelaar BV',bedrag:ketelaar,note:'3,75%'},{naam:'Trigorin BV (Theu Boermans)',bedrag:trigorin,note:'5,00%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}],
+    totalen_K:{'CoBO-Fonds':cobo,'VPRO Omroepvereniging':vpro,'Topkapi Rights I':tkr,'Wilmar Amsterdam BV (Kees Prins)':wilmar,'Frank Ketelaar BV':ketelaar,'Trigorin BV (Theu Boermans)':trigorin}};
+}
+
+// VAN GOD LOS — pos1 TKR1 2/3 + Rinkel 1/3 (cap 22.689); pos2 CoBO 50% + TKR1 50% (cap 181.512 elk); makers van TKR1 15%
+function waterval_vgl(n) {
+  const p1=Math.min(n,22689); const r1=n-p1;
+  const p1_tkr=p1*(2/3), p1_rinkel=p1*(1/3);
+  const p2_cobo=Math.min(r1*0.50,181512), p2_tkr_b=Math.min(r1*0.50,181512);
+  const nelissen=p2_tkr_b*0.10, kuijpers=p2_tkr_b*0.05, p2_tkr=p2_tkr_b-nelissen-kuijpers;
+  const r2=r1-p2_cobo-p2_tkr_b;
+  return {posities:[
+    {naam:'Pos1 — TKR1 2/3 & Rinkel 1/3 (cap €22.689)',pool:22689,deelbaar:p1,
+      ontvangers:[{naam:'Topkapi Rights I',bedrag:p1_tkr,note:'66,67%'},{naam:'Rinkel Film BV',bedrag:p1_rinkel,note:'33,33%'}]},
+    {naam:'Pos2 — CoBO 50% & TKR1 50% (cap €363.024)',pool:363024,deelbaar:p2_cobo+p2_tkr_b,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:p2_cobo,note:'50%'},{naam:'Topkapi Rights I',bedrag:p2_tkr,note:'50% − makers'},{naam:'P. J. Nelissen',bedrag:nelissen,note:'10% van TKR1-deel'},{naam:'Pieter Kuijpers Holding',bedrag:kuijpers,note:'5% van TKR1-deel'}].filter(o=>Math.abs(o.bedrag)>=0.005)},
+    {naam:'Verdere posities',deelbaar:r2,ontvangers:[{naam:'Verdere verdeling',bedrag:r2,note:'zie schema VGL'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1_tkr+p2_tkr,'Rinkel Film BV':p1_rinkel,'CoBO-Fonds':p2_cobo,'P. J. Nelissen':nelissen,'Pieter Kuijpers Holding':kuijpers}};
+}
+
+// VREEMD BLOED — pos1 NFF 50% + TKR1 50% (cap 22.500 elk); pos2 TKR1 cap 500; pos3 CoBO + Suppletiefonds
+function waterval_vreemd_bloed(n) {
+  const p1=Math.min(n,45000); const r1=n-p1;
+  const p2=Math.min(r1,500); const r2=r1-p2;
+  const p3_cobo=Math.min(r2*0.3499974469,185065), p3_supp=Math.min(r2*0.6500025531,343696);
+  return {posities:[
+    {naam:'Pos1 — NFF 50% & TKR1 50% (cap €45.000)',pool:45000,deelbaar:p1,
+      ontvangers:[{naam:'Stichting Nederlands Fonds voor de Film',bedrag:p1/2,note:'50%'},{naam:'Topkapi Rights I',bedrag:p1/2,note:'50%'}]},
+    {naam:'Pos2 — TKR1 (cap €500)',pool:500,deelbaar:p2,ontvangers:[{naam:'Topkapi Rights I',bedrag:p2,note:'100%'}]},
+    {naam:'Pos3 — CoBO 35% & Suppletiefonds 65%',deelbaar:r2,
+      ontvangers:[{naam:'CoBO-Fonds',bedrag:p3_cobo,note:'35%'},{naam:'Suppletiefonds',bedrag:p3_supp,note:'65%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}
+  ],totalen_K:{'Topkapi Rights I':p1/2+p2,'Stichting Nederlands Fonds voor de Film':p1/2,'CoBO-Fonds':p3_cobo,'Suppletiefonds':p3_supp}};
+}
+
+// WIJSTER — TKR1 100%
+function waterval_wijster(n) { return {posities:[{naam:'Eerste positie',deelbaar:n,ontvangers:[{naam:'Topkapi Rights I',bedrag:n,note:'100%'}]}],totalen_K:{'Topkapi Rights I':n}}; }
+
+// WITTE VIS — 30% kosten; TKR1 100%
+function waterval_witte_vis(n) { return {posities:[{naam:'Eerste positie',deelbaar:n,ontvangers:[{naam:'Topkapi Rights I',bedrag:n,note:'100%'}]}],totalen_K:{'Topkapi Rights I':n}}; }
+
+// ZADELPIJN — 30% kosten; 1/3 CoBO + 1/3 KRO-NCRV + 1/3 TKR1; makers 7%
+function waterval_zadelpijn(n) {
+  const cobo=n/3, kro=n/3, tkr_b=n/3;
+  const kramer=tkr_b*0.02, heintz=tkr_b*0.025, lve=tkr_b*0.025, tkr=tkr_b-kramer-heintz-lve;
+  return {posities:[{naam:'Eerste positie — 1/3 CoBO, 1/3 KRO-NCRV, 1/3 TKR1',deelbaar:n,
+    ontvangers:[{naam:'CoBO-Fonds',bedrag:cobo,note:'33,33%'},{naam:'KRO-NCRV',bedrag:kro,note:'33,33%'},{naam:'Topkapi Rights I',bedrag:tkr,note:'33,33% − makers'},{naam:'Moniek Kramer',bedrag:kramer,note:'2%'},{naam:'Ciel Heintz',bedrag:heintz,note:'2,5%'},{naam:'LVE Flow BV',bedrag:lve,note:'2,5%'}].filter(o=>Math.abs(o.bedrag)>=0.005)}],
+    totalen_K:{'CoBO-Fonds':cobo,'KRO-NCRV':kro,'Topkapi Rights I':tkr,'Moniek Kramer':kramer,'Ciel Heintz':heintz,'LVE Flow BV':lve}};
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// REGISTRY
+// ═══════════════════════════════════════════════════════════════════
+const WV = {
+  ail:waterval_ail, alles_stroomt:waterval_alles_stroomt, amazones:waterval_amazones,
+  amnesia:waterval_amnesia, amnm:waterval_amnm, ander_geluk:waterval_ander_geluk,
+  bb:waterval_bb, bride_flight:waterval_bride_flight, bride_flight_roman:waterval_bride_flight_roman,
+  brcircle:waterval_brcircle, cloaca:waterval_cloaca, code_blue:waterval_code_blue,
+  diseurs:waterval_diseurs, drift:waterval_drift, dho:waterval_dho,
+  echte_leven:waterval_echte_leven, eilandgasten:waterval_eilandgasten, escort:waterval_escort,
+  familie:waterval_familie, first_mission:waterval_first_mission, fuik:waterval_fuik,
+  geheim:waterval_geheim, helaasheid:waterval_helaasheid, hitte:waterval_hitte,
+  armen:waterval_armen, in_oranje:waterval_in_oranje, isabelle:waterval_isabelle,
+  jackie:waterval_jackie, joy:waterval_joy, julias_hart:waterval_julias_hart,
+  langer_licht:waterval_langer_licht, layla_fourie:waterval_layla_fourie,
+  loverboy:waterval_loverboy, blijdschap:waterval_blijdschap, monte_carlo:waterval_monte_carlo,
+  my_queen:waterval_my_queen, nick:waterval_nick, paradise:waterval_paradise,
+  phileine:waterval_phileine, poolse_bruid:waterval_poolse_bruid, ru_there:waterval_ru_there,
+  schlafkrankheit:waterval_schlaf, temmink:waterval_temmink, tiramisu:waterval_tiramisu,
+  tribunal:waterval_tribunal, teetje:waterval_teetje, tweeling_nl:waterval_tweeling_nl,
+  tweeling_row:waterval_tweeling_row,
+  uitverkorene:waterval_uitverkorene, vgl:waterval_vgl, vreemd_bloed:waterval_vreemd_bloed,
+  wijster:waterval_wijster, witte_vis:waterval_witte_vis, zadelpijn:waterval_zadelpijn,
+};
+
+const LABELS = {
+  ail:'Alles is Liefde', alles_stroomt:'Alles Stroomt', amazones:'Amazones',
+  amnesia:'Amnesia', amnm:'Alleen Maar Nette Mensen', ander_geluk:'Een Ander Zijn Geluk',
+  bb:'Black Butterflies', bride_flight:'Bride Flight', bride_flight_roman:'Bride Flight Roman',
+  brcircle:'The Broken Circle Breakdown', cloaca:'Cloaca', code_blue:'Code Blue',
+  diseurs:'Les Diseurs de Vérité', drift:'Drift', dho:'De Heineken Ontvoering',
+  echte_leven:'Het Echte Leven', eilandgasten:'Eilandgasten', escort:'Escort',
+  familie:'Familie', first_mission:'First Mission', fuik:'De Fuik',
+  geheim:'Het Geheim', helaasheid:'De Helaasheid der Dingen', hitte:'Hitte Harara',
+  armen:'Ik omhels je met 1000 Armen', in_oranje:'In Oranje', isabelle:'Isabelle',
+  jackie:'Jackie', joy:'Joy', julias_hart:"Julia's Hart",
+  langer_licht:'Langer Licht', layla_fourie:'Layla Fourie', loverboy:'Loverboy',
+  blijdschap:'Met grote Blijdschap', monte_carlo:'Monte Carlo', my_queen:'My Queen Karo',
+  nick:'Nick', paradise:'Paradise Girls', phileine:'Phileine zegt Sorry',
+  poolse_bruid:'De Poolse Bruid', ru_there:'R U There', schlafkrankheit:'Schlafkrankheit',
+  temmink:'Temmink', tiramisu:'Tiramisu', tribunal:'Tribunal', teetje:'Trip van Teetje',
+  tweeling_nl:'De Tweeling (NL)',
+  tweeling_row:'De Tweeling (ROW)', uitverkorene:'De Uitverkorene', vgl:'Van God Los',
+  vreemd_bloed:'Vreemd Bloed', wijster:'Wijster', witte_vis:'Witte Vis', zadelpijn:'Zadelpijn',
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════════════════
+function resetResult() {
+  document.getElementById('result').style.display='none';
+  document.getElementById('empty').style.display='flex';
+}
+
+function onFilmChange() {
+  const f=document.getElementById('sel-film').value;
+  const sd=document.getElementById('saldo-display');
+  sd.style.display=f?'':'none';
+  if (f&&SALDI[f]) {
+    sd.innerHTML=`<div class="saldo-box"><div class="sb-label">Huidig netto in schema</div><div class="sb-val">${fmt(SALDI[f].netto_cum)}</div></div>`;
+  }
+  // 30% hint
+  const hint=document.getElementById('bedrag-hint');
+  const lbl=document.getElementById('bedrag-label');
+  if (KOSTEN_30.has(f)) {
+    lbl.textContent='Bruto bedrag statement (€)';
+    hint.textContent='30% conform contract → TKR1 als kosten. 70% te verdelen conform schema.';
+  } else {
+    lbl.textContent='Nieuw bedrag statement (€)';
+    hint.textContent='Positief = inkomsten. Negatief = kosten/creditnota.';
+  }
+  resetResult();
+}
+
+function calculate() {
+  const f=document.getElementById('sel-film').value;
+  if (!f){alert('Kies eerst een productie.');return;}
+  const bedrag=parseFloat(document.getElementById('inp-bedrag').value);
+  if (isNaN(bedrag)||bedrag===0){alert('Voer een geldig bedrag in (≠ 0).');return;}
+
+  const s=SALDI[f];
+  const netto_oud=s.netto_cum;
+
+  // 30% kosten
+  let kosten_tkr1=0, bedrag_verdeel=bedrag;
+  if (KOSTEN_30.has(f)&&bedrag>0) {
+    kosten_tkr1=bedrag*0.30;
+    bedrag_verdeel=bedrag*0.70;
+  }
+
+  // Negatief saldo inlopen
+  if (netto_oud<0&&bedrag_verdeel>0) {
+    const inloop=Math.min(bedrag_verdeel,Math.abs(netto_oud));
+    const rest=Math.max(0,bedrag_verdeel+netto_oud);
+    const netto_nieuw_neg=netto_oud+bedrag_verdeel;
+    renderMetInloop(LABELS[f],WV[f](0),WV[f](rest),inloop+kosten_tkr1,rest,netto_oud,netto_nieuw_neg,kosten_tkr1);
+    return;
+  }
+
+  const netto_nieuw=netto_oud+bedrag_verdeel;
+  const oud=WV[f](netto_oud), nieuw=WV[f](netto_nieuw);
+  render(LABELS[f],oud,nieuw,bedrag_verdeel,netto_oud,netto_nieuw,oud.info||nieuw.info||null,kosten_tkr1,bedrag);
+}
+
+function renderMetInloop(label,oud_basis,nieuw_basis,inloop,rest,netto_oud,netto_nieuw,kosten_tkr1) {
+  const area=document.getElementById('result');
+  document.getElementById('empty').style.display='none';
+  area.style.display='block';
+  const dK_rest=delta_K(oud_basis.totalen_K,nieuw_basis.totalen_K);
+  const dK={...dK_rest};
+  const tkkey=Object.keys(dK).find(k=>k.toLowerCase().includes('topkapi rights i'))||'Topkapi Rights I';
+  dK[tkkey]=(dK[tkkey]||0)+inloop;
+  const somD=Object.values(dK).reduce((s,v)=>s+v,0);
+  const delta_tot=inloop+rest;
+  const diff=Math.abs(somD-delta_tot);
+  const vClass=diff<0.02?'ok':diff<1?'warn':'err';
+  let html=`<div class="r-header"><div><div class="r-title">${label}</div><div class="r-sub">Verdeling nieuw statement</div></div><span class="badge">inkomsten</span></div>
+  <div class="summary-strip"><div class="si"><label>Statement</label><div class="val">${fmt(delta_tot)}</div></div><div class="si"><label>Stand vóór</label><div class="val neg">${fmt(netto_oud)}</div></div><div class="si"><label>Stand na</label><div class="val">${fmt(netto_nieuw)}</div></div></div>
+  <div class="info"><strong>Negatief saldo ingelopen:</strong> ${fmt(inloop)} gaat naar Topkapi Rights I.${rest>0?` Resterende ${fmt(rest)} wordt verdeeld conform het schema.`:' Het saldo blijft negatief.'}</div>
+  <div class="positie"><div class="pos-header"><span class="pos-naam">Inlopen negatief saldo</span></div><div class="ontvanger"><span class="o-naam">Topkapi Rights I</span><span class="o-note">inlopen negatief saldo</span><span class="o-bedrag pos">${fmt(inloop)}</span></div></div>`;
+  if (rest>0) {
+    for (const pN of nieuw_basis.posities) {
+      const pO=oud_basis.posities.find(p=>p.naam===pN.naam)||{ontvangers:[]};
+      const dO=(pN.ontvangers||[]).map(oN=>({naam:oN.naam,note:oN.note,delta:(oN.bedrag||0)-((pO.ontvangers||[]).find(x=>x.naam===oN.naam)?.bedrag||0)}));
+      if (!dO.some(o=>Math.abs(o.delta)>=0.005)) continue;
+      html+=`<div class="positie"><div class="pos-header"><span class="pos-naam">${pN.naam}</span></div>`;
+      for (const o of dO) { if (Math.abs(o.delta)<0.005) continue; html+=`<div class="ontvanger"><span class="o-naam">${o.naam}</span><span class="o-note">${o.note||''}</span><span class="o-bedrag ${o.delta<0?'neg':'pos'}">${fmt(o.delta)}</span></div>`; }
+      html+=`</div>`;
+    }
+  }
+  const sortedD=Object.entries(dK).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+  html+=`<div class="totaal"><div class="totaal-kop">Uitbetaling dit statement (delta kolom K)</div>`;
+  for (const [naam,v] of sortedD) html+=`<div class="t-row ${v<0?'neg':''}"><span class="naam">${naam}</span><span class="bedrag">${fmt(v)}</span></div>`;
+  html+=`<div class="t-row grand"><span class="naam">Totaal</span><span class="bedrag">${fmt(somD)}</span></div><div class="verificatie ${vClass}">✓ Verificatie — delta K (${fmt(somD)}) = statement (${fmt(delta_tot)})</div></div>`;
+  area.innerHTML=html;
+}
+
+function render(label,oud,nieuw,delta,netto_oud,netto_nieuw,info,kosten_tkr1=0,bruto=0) {
+  const area=document.getElementById('result');
+  document.getElementById('empty').style.display='none';
+  area.style.display='block';
+  const isNeg=delta<0;
+  const bruto_display=bruto||delta+kosten_tkr1;
+  const dK=delta_K(oud.totalen_K,nieuw.totalen_K);
+  const somD=Object.values(dK).reduce((s,v)=>s+v,0);
+  const diff=Math.abs(somD-delta);
+  const vClass=diff<0.02?'ok':diff<1?'warn':'err';
+  const vTekst=diff<0.02?`✓ Verificatie — delta K (${fmt(somD)}) = statement (${fmt(delta)})`:
+    `⚠ Verschil ${fmt(diff)} — delta K ${fmt(somD)} vs statement ${fmt(delta)}`;
+  let html=`<div class="r-header"><div><div class="r-title">${label}</div><div class="r-sub">Verdeling nieuw statement</div></div><span class="badge ${isNeg?'neg':''}">${isNeg?'kosten / correctie':'inkomsten'}</span></div>
+  <div class="summary-strip"><div class="si"><label>Statement (bruto)</label><div class="val ${isNeg?'neg':''}">${fmt(bruto_display)}</div></div><div class="si"><label>Stand vóór</label><div class="val dim">${fmt(netto_oud)}</div></div><div class="si"><label>Stand na</label><div class="val">${fmt(netto_nieuw)}</div></div></div>`;
+  if (kosten_tkr1>0) html+=`<div class="positie"><div class="pos-header"><span class="pos-naam">Kosten 30% conform contract → Topkapi Rights I</span></div><div class="ontvanger"><span class="o-naam">Topkapi Rights I</span><span class="o-note">30% van bruto statement</span><span class="o-bedrag pos">${fmt(kosten_tkr1)}</span></div></div>`;
+  if (info) html+=`<div class="info">${info}</div>`;
+  for (let i=0;i<nieuw.posities.length;i++) {
+    const pN=nieuw.posities[i],pO=oud.posities[i]||{ontvangers:[]};
+    const dO=(pN.ontvangers||[]).map(oN=>({naam:oN.naam,note:oN.note,delta:(oN.bedrag||0)-((pO.ontvangers||[]).find(x=>x.naam===oN.naam)?.bedrag||0)}));
+    const heeftD=dO.some(o=>Math.abs(o.delta)>=0.005);
+    const poolStr=pN.pool!==undefined?`<span class="pos-meta">pool: €\u202f${pN.pool.toLocaleString('nl-NL',{maximumFractionDigits:0})}</span>`:'';
+    html+=`<div class="positie"><div class="pos-header"><span class="pos-naam">${pN.naam}</span>${poolStr}</div>`;
+    if (!heeftD) { html+=`<div class="pos-skip">Geen nieuw bedrag in deze positie</div>`; }
+    else { for (const o of dO) { if (Math.abs(o.delta)<0.005) continue; html+=`<div class="ontvanger"><span class="o-naam">${o.naam}</span><span class="o-note">${o.note||''}</span><span class="o-bedrag ${o.delta<0?'neg':o.delta>0?'pos':'nil'}">${fmt(o.delta)}</span></div>`; } }
+    html+=`</div>`;
+  }
+  const sortedD=Object.entries(dK).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+  html+=`<div class="totaal"><div class="totaal-kop">Uitbetaling dit statement (delta kolom K)</div>`;
+  for (const [naam,v] of sortedD) html+=`<div class="t-row ${v<0?'neg':''}"><span class="naam">${naam}</span><span class="bedrag">${fmt(v)}</span></div>`;
+  html+=`<div class="t-row grand"><span class="naam">Totaal</span><span class="bedrag">${fmt(somD)}</span></div><div class="verificatie ${vClass}">${vTekst}</div></div>`;
+  area.innerHTML=html;
+}
+</script>
+</body>
+</html>
